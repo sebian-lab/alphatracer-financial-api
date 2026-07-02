@@ -27,12 +27,12 @@ jobs:
 
       - name: Run Python unit tests
         env:
-          DATABASE_URL: sqlite:///:memory:
-          SECRET_KEY: test-secret-key-for-ci-pipeline-security-checks-only-1234
-          ALGORITHM: HS256
-          ACCESS_TOKEN_EXPIRE_MINUTES: 60
-          PRIMARY_TICKER_CSV: https://raw.githubusercontent.com/abbadata/stock-tickers/main/data/all.csv
-          SECONDARY_TICKER_CSV: https://raw.githubusercontent.com/Ate329/top-us-stock-tickers/main/tickers/all.csv
+          DATABASE_URL: "sqlite:///:memory:"
+          SECRET_KEY: "test-secret-key-for-ci-pipeline-security-checks-only-1234"
+          ALGORITHM: "HS256"
+          ACCESS_TOKEN_EXPIRE_MINUTES: "60"
+          PRIMARY_TICKER_CSV: "https://raw.githubusercontent.com/abbadata/stock-tickers/main/data/all.csv"
+          SECONDARY_TICKER_CSV: "https://raw.githubusercontent.com/Ate329/top-us-stock-tickers/main/tickers/all.csv"
         run: |
           pytest
 
