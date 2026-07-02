@@ -1,6 +1,19 @@
+import os
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
+from app.core.database import create_tables
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_database():
+    create_tables()
+    yield
+    # Cleanup database file after tests complete
+    if os.path.exists("./test.db"):
+        try:
+            os.remove("./test.db")
+        except Exception:
+            pass
 
 client = TestClient(app)
 
