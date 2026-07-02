@@ -1,0 +1,22 @@
+fastapi>=0.100.0
+uvicorn[standard]>=0.22.0
+sqlalchemy>=2.0.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+PyJWT>=2.7.0
+# Direct bcrypt — passlib is unmaintained and breaks with bcrypt>=4.x
+# (AttributeError: module 'bcrypt' has no attribute '__about__')
+bcrypt>=4.0.0
+python-multipart>=0.0.6
+requests>=2.28.0
+yfinance>=0.2.0
+numpy>=1.24.0
+pandas>=1.5.0
+python-dotenv>=1.0.0
+
+# Database drivers
+psycopg2-binary>=2.9.0
+
+# Testing & QA
+pytest>=7.0.0
+httpx>=0.24.0
