@@ -18,9 +18,8 @@ No database server needed — Alphatracer uses **SQLite** (single file, created 
 # 1. Install Python dependencies
 pip install -r requirements.txt
 
-# 2. Configure environment (defaults are fine for local dev)
-#    Edit .env to change SECRET_KEY before deploying anywhere public
-cp .env .env.backup   # optional backup
+# 2. Copy the example environment file and configure variables
+cp .env.example .env
 
 # 3. Start the server
 uvicorn app.main:app --host 0.0.0.0 --port 8011 --reload

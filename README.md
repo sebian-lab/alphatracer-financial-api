@@ -36,6 +36,23 @@ uvicorn app.main:app --host 0.0.0.0 --port 8011 --reload
 
 ---
 
+## Running Tests
+
+You can run the test suite to verify the application is working correctly:
+
+```bash
+# Run pytest unit tests
+pytest
+
+# Run the full endpoint integration tests (requires server running on localhost:8011)
+bash tests/test_all_endpoints.sh
+
+# Run end-to-end demo script
+bash demo.sh
+```
+
+---
+
 ## Security Features
 
 This API includes production-ready cybersecurity measures:
