@@ -79,7 +79,15 @@ jobs:
           name: sbom
           path: sbom.spdx.json
 
-      # 7. Push to GHCR and sign (keyless – FREE!)
+      # 7. Log in to GHCR, push image and sign (keyless)
+      - name: Log in to GitHub Container Registry
+        if: github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Push and Sign (keyless)
         if: github.ref == 'refs/heads/main'
         env:
