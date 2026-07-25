@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 # 📈 AlphaTracer Financial API — Production-Grade DevSecOps & GitOps Platform
 
 [![DevSecOps Pipeline](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions%20Free%20Tier-blue?logo=githubactions)](https://github.com/sebian-lab/alphatracer-financial-api/actions)
@@ -317,11 +315,9 @@ kubectl apply -f infrastructure/kubernetes/argo-app.yaml
 <p align="center">
   <i>Built with passion to demonstrate hands-on Kubernetes administration, shift-left security, and zero-cost DevOps excellence. Open for DevOps, SecOps, and DevSecOps internship opportunities in Belgium 🇧🇪 and Luxembourg 🇱🇺.</i>
 </p>
-#   d u m m y  
+#   d u m m y 
  
-=======
-=======
->>>>>>> main
+ 
 # 📈 AlphaTracer Financial API — Production-Grade DevSecOps & GitOps Platform
 
 [![DevSecOps Pipeline](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions%20Free%20Tier-blue?logo=githubactions)](https://github.com/sebian-lab/alphatracer-financial-api/actions)
@@ -639,7 +635,8 @@ kubectl apply -f infrastructure/kubernetes/argo-app.yaml
 <p align="center">
   <i>Built with passion to demonstrate hands-on Kubernetes administration, shift-left security, and zero-cost DevOps excellence. Open for DevOps, SecOps, and DevSecOps internship opportunities in Belgium 🇧🇪 and Luxembourg 🇱🇺.</i>
 </p>
-<<<<<<< HEAD
->>>>>>> main
-=======
->>>>>>> main
+
+
+
+
+
