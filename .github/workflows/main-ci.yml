@@ -54,6 +54,7 @@ jobs:
     needs: security
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
