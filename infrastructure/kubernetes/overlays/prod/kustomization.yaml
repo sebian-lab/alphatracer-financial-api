@@ -4,4 +4,4 @@ resources:
   - ../../base
 images:
   - name: ghcr.io/sebian-lab/alphatracer-financial-api
-    newTag: 71e783a2bf55c1c857ae71debeaf5fe30c41b13b  # updated by CI
+    newTag: d83d9d9dd4485358e07c67d934103bf129697cea  # updated by CI
