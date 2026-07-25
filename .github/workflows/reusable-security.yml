@@ -46,7 +46,8 @@ jobs:
           push: false
           tags: alphatracer:${{ inputs.image-tag }}
           outputs: type=docker,dest=/tmp/alphatracer.tar
-
+      - name: Load image into Docker daemon
+        run: docker load -i /tmp/alphatracer.tar
       # 4. Trivy container scan (fail on HIGH/CRITICAL)
       - name: Trivy container scan
         uses: aquasecurity/trivy-action@master
