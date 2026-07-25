@@ -72,50 +72,7 @@ k3sslave2   Ready    <none>          v1.36.2+k3s1   10.0.2.15        Ubuntu 26.0
 
 ### Live Cluster Namespaces & Component Architecture
 
-```mermaid
-graph TB
-    subgraph Master_Node ["K3s Master Node (k3smaster @ 192.168.56.109)"]
-        API_Server["K8s API Server & Control Plane"]
-
-        subgraph NS_ArgoCD ["namespace: argocd"]
-            ArgoServer["argocd-server"]
-            ArgoController["argocd-application-controller"]
-            ArgoRepo["argocd-repo-server"]
-        end
-
-        subgraph NS_Kyverno ["namespace: kyverno"]
-            KyvernoAdm["kyverno-admission-controller"]
-            KyvernoBg["kyverno-background-controller"]
-            KyvernoClean["kyverno-cleanup-controller"]
-        end
-
-        subgraph NS_Monitoring ["namespace: monitoring"]
-            Prometheus["prometheus-server"]
-            Grafana["grafana-dashboard"]
-            KubeState["kube-state-metrics"]
-        end
-
-        subgraph NS_App ["namespace: alphatracer"]
-            API_Pod1["alphatracer-api-pod-1"]
-            API_Pod2["alphatracer-api-pod-2"]
-            DB_Secret["alphatracer-secrets"]
-        end
-    end
-
-    subgraph Slave_Node1 ["Worker Node (k3sslave1)"]
-        NodeExp1["node-exporter"]
-    end
-
-    subgraph Slave_Node2 ["Worker Node (k3sslave2)"]
-        NodeExp2["node-exporter"]
-    end
-
-    ArgoController -->|GitOps Declarative Sync| NS_App
-    KyvernoAdm -->|Admission Webhook Guardrail| API_Server
-    Prometheus -->|Scrape Metrics| NS_App
-    Prometheus -->|Node Metrics| NodeExp1
-    Prometheus -->|Node Metrics| NodeExp2
-```
+![K3s Live Cluster Namespaces & Component Architecture](deepseek_mermaid_20260725_44c46c.png)
 
 ---
 
@@ -125,42 +82,7 @@ graph TB
 
 The project demonstrates an end-to-end continuous delivery pipeline from git commit to cluster deployment:
 
-```mermaid
-flowchart TD
-    subgraph Local_Developer["Local Developer Workstation"]
-        Hook[Git Pre-Commit Hook - Gitleaks & Bandit] --> Check[dev-check.ps1 Pre-PR Script]
-    end
-
-    subgraph Developer_Workflow["CI Pipeline"]
-        Check -->|Push / Open PR| B[Full CI/CD Pipeline Orchestrator]
-    end
-
-    subgraph Security_Gate["Reusable DevSecOps Gate (Shift-Left)"]
-        B --> C[Unit Tests - Pytest]
-        B --> D[SAST Scanning - Bandit]
-        B --> E[Secret Scanning - Gitleaks]
-        E --> F[Container Vulnerability Scan - Trivy]
-        F -->|Upload SARIF| G[GitHub Security Dashboard]
-        F --> H[SBOM Generation - Syft]
-        F --> I[Keyless Image Signing - Cosign / OIDC]
-        I --> J[Push Image to GHCR]
-    end
-
-    subgraph IaC_Validation["Zero-Cost IaC"]
-        J --> K[Terraform Plan - Dry-Run Verification]
-    end
-
-    subgraph GitOps_Deployment["GitOps Delivery on On-Prem K3s"]
-        K --> L[Kustomize Image Tag Auto-Commit]
-        L -->|Sync Trigger| M[ArgoCD Engine on K3s Master 192.168.56.109]
-        M --> N[Kubernetes Deployment - Prod Overlay]
-    end
-
-    subgraph Policy_Observability["Runtime Security & Monitoring"]
-        N --> O[Kyverno Policy Enforcement - Disallow Root User]
-        N --> P[Prometheus / Grafana Monitoring Stack]
-    end
-```
+![DevSecOps End-to-End Pipeline & GitOps Delivery Flow](deepseek_mermaid_20260725_44c46c.png)
 
 ---
 
@@ -168,28 +90,7 @@ flowchart TD
 
 Kyverno admission controller enforces zero-trust container security policies live on the K3s cluster:
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Dev as Developer / kubectl
-    participant K8s as K8s API Server
-    participant Kyverno as Kyverno Admission Webhook
-    participant Cluster as K3s Cluster State
-
-    Dev->>K8s: kubectl run bad-pod --image=nginx (runAsRoot)
-    K8s->>Kyverno: Intercept Pod Creation Request
-    Kyverno->>Kyverno: Evaluate ClusterPolicy: disallow-root
-    Note over Kyverno: Container lacks runAsNonRoot: true
-    Kyverno-->>K8s: REJECT (Admission Webhook Denied)
-    K8s-->>Dev: ERROR: Pod blocked by disallow-root policy!
-
-    Dev->>K8s: kubectl apply -f deployment.yaml (runAsNonRoot: true)
-    K8s->>Kyverno: Intercept Pod Creation Request
-    Kyverno->>Kyverno: Evaluate ClusterPolicy: disallow-root
-    Kyverno-->>K8s: ALLOW (Validation Passed)
-    K8s->>Cluster: Schedule Pod to Worker Node
-    K8s-->>Dev: pod/alphatracer-api created successfully
-```
+![Kyverno Admission Control Sequence & Policy Enforcement](deepseek_mermaid_20260725_44c46c.png)
 
 ---
 
