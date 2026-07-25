@@ -19,11 +19,9 @@ jobs:
       - name: Run pytest
         env:
           DATABASE_URL: "sqlite:///./test.db"
-          SECRET_KEY: ${{ secrets.SECRET_KEY || 'ci-pytest-ephemeral-key' }}
+          SECRET_KEY: "test-secret-key-1234"
           ALGORITHM: "HS256"
           ACCESS_TOKEN_EXPIRE_MINUTES: "60"
-          PRIMARY_TICKER_CSV: "https://raw.githubusercontent.com/abbadata/stock-tickers/main/data/all.csv"
-          SECONDARY_TICKER_CSV: "https://raw.githubusercontent.com/Ate329/top-us-stock-tickers/main/tickers/all.csv"
         run: pytest
 
   # 2. SAST (Bandit Scanner)

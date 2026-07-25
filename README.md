@@ -315,5 +315,3 @@ kubectl apply -f infrastructure/kubernetes/argo-app.yaml
 <p align="center">
   <i>Built with passion to demonstrate hands-on Kubernetes administration, shift-left security, and zero-cost DevOps excellence. Open for DevOps, SecOps, and DevSecOps internship opportunities in Belgium 🇧🇪 and Luxembourg 🇱🇺.</i>
 </p>
-#   d u m m y  
- 
