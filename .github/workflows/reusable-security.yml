@@ -100,4 +100,4 @@ jobs:
           docker load -i /tmp/alphatracer.tar
           docker tag alphatracer:${{ inputs.image-tag }} ghcr.io/${{ github.repository }}:${{ inputs.image-tag }}
           docker push ghcr.io/${{ github.repository }}:${{ inputs.image-tag }}
-          cosign sign ghcr.io/${{ github.repository }}:${{ inputs.image-tag }}
+          cosign sign -y ghcr.io/${{ github.repository }}:${{ inputs.image-tag }}
