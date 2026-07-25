@@ -10,11 +10,9 @@ Write-Host "`n🔍 Starting AlphaTracer DevSecOps Pre-PR Checks...`n" -Foregroun
 # Step 1: Run Pytest Unit Tests
 Write-Host "🧪 [1/6] Running Pytest Unit Tests..." -ForegroundColor Yellow
 $env:DATABASE_URL = "sqlite:///./test.db"
-$env:SECRET_KEY = [System.Guid]::NewGuid().ToString("N")
+$env:SECRET_KEY = "test-secret-key-1234"
 $env:ALGORITHM = "HS256"
 $env:ACCESS_TOKEN_EXPIRE_MINUTES = "60"
-$env:PRIMARY_TICKER_CSV = "https://raw.githubusercontent.com/abbadata/stock-tickers/main/data/all.csv"
-$env:SECONDARY_TICKER_CSV = "https://raw.githubusercontent.com/Ate329/top-us-stock-tickers/main/tickers/all.csv"
 pytest -q
 if ($LASTEXITCODE -ne 0) {
     Write-Host "❌ Unit tests failed!" -ForegroundColor Red

@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/sebian-lab/alphatracer-financial-api
-    targetRevision: HEAD
+    targetRevision: main
     path: infrastructure/kubernetes/overlays/prod
   destination:
     server: https://kubernetes.default.svc
