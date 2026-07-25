@@ -13,15 +13,17 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     DATABASE_POOL_PREPARED: bool = True
 
-    # JWT Security - No defaults, MUST be in .env
+    # JWT Security - SECRET_KEY MUST be in .env or Kubernetes Secrets
     SECRET_KEY: str
-    ALGORITHM: str
-    ACCESS_TOKEN_EXPIRE_MINUTES: int
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # Stock Data Sources
-    PRIMARY_TICKER_CSV: str
-    SECONDARY_TICKER_CSV: str
+    PRIMARY_TICKER_CSV: str = (
+        "https://raw.githubusercontent.com/abbadata/stock-tickers/main/data/all.csv"
+    )
+    SECONDARY_TICKER_CSV: str = "https://raw.githubusercontent.com/Ate329/top-us-stock-tickers/main/tickers/all.csv"
     TICKER_UPDATE_INTERVAL_HOURS: int = 12
     PRICE_API_PROVIDER: str = "yfinance"
 

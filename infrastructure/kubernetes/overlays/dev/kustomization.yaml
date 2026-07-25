@@ -2,7 +2,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - ../../base
+
 images:
 - name: ghcr.io/sebian-lab/alphatracer-financial-api
   newName: ghcr.io/sebian-lab/alphatracer-financial-api
-  newTag: 71e783a2bf55c1c857ae71debeaf5fe30c41b13b
+  newTag: f4f29daa178ca7d2c0b3be695e476d0343eb81d8

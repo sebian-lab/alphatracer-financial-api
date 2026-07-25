@@ -28,6 +28,14 @@ spec:
             secretKeyRef:
               name: alphatracer-secrets
               key: secret-key
+        - name: ALGORITHM
+          value: "HS256"
+        - name: ACCESS_TOKEN_EXPIRE_MINUTES
+          value: "60"
+        - name: PRIMARY_TICKER_CSV
+          value: "https://raw.githubusercontent.com/abbadata/stock-tickers/main/data/all.csv"
+        - name: SECONDARY_TICKER_CSV
+          value: "https://raw.githubusercontent.com/Ate329/top-us-stock-tickers/main/tickers/all.csv"
         securityContext:
           runAsNonRoot: true
           runAsUser: 1000
