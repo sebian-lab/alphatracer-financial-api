@@ -1,444 +1,317 @@
-# Alphatracer Backend
+# 📈 AlphaTracer Financial API — Production-Grade DevSecOps & GitOps Platform
 
-A FastAPI portfolio-tracking API. Uses **PostgreSQL** in production (via Docker Compose) and supports **SQLite** for zero-setup local development. Uses **Yahoo Finance (yfinance)** for real-time prices, candles, and technical indicators.
+[![DevSecOps Pipeline](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions%20Free%20Tier-blue?logo=githubactions)](https://github.com/sebian-lab/alphatracer-financial-api/actions)
+[![Infrastructure](https://img.shields.io/badge/Infrastructure-3--Node%20K3s%20Cluster-green?logo=kubernetes)](https://k3s.io/)
+[![GitOps Engine](https://img.shields.io/badge/GitOps-ArgoCD-orange?logo=argo)](https://argoproj.github.io/argo-cd/)
+[![Policy Engine](https://img.shields.io/badge/Policy-Kyverno-brightgreen?logo=kubernetes)](https://kyverno.io/)
+[![Observability](https://img.shields.io/badge/Observability-Prometheus%20%2B%20Grafana-red?logo=prometheus)](https://prometheus.io/)
+[![IaC Verification](https://img.shields.io/badge/IaC-Terraform-purple?logo=terraform)](https://www.terraform.io/)
+[![Dev Productivity](https://img.shields.io/badge/DevSecOps-Pre--Commit%20%26%20dev--check.ps1-cyan?logo=powershell)](#-developer-productivity--pre-pr-safeguards)
+[![Cloud Spend](https://img.shields.io/badge/Cloud%20Spend-%240%20Zero%20Cost-success)](#-zero-cloud-cost--live-3-node-k3s-cluster-architecture)
+[![Target Role](https://img.shields.io/badge/Target%20Role-DevOps%20%2F%20SecOps%20%2F%20DevSecOps%20Internship-gold)](#-market-alignment--target-roles-belgium--luxembourg)
 
----
-
-## Quick Start (Docker / Production Setup)
-
-The easiest way to run the application with a production-ready PostgreSQL database is via Docker Compose:
-
-```bash
-# 1. Start the FastAPI application and PostgreSQL database containers
-docker compose up --build
-```
-
-- API base: `http://localhost:8011/api/v1`
-- Interactive docs (Swagger): `http://localhost:8011/docs`
-- Health check: `http://localhost:8011/health`
+> **Engineering Portfolio Project** demonstrating enterprise **DevSecOps**, **GitOps**, **Policy-as-Code**, and **Observability** running on a **100% Free / On-Premise 3-Node K3s Cluster** and **Free-Tier GitHub Actions**. Built specifically to target **DevOps / SecOps / DevSecOps Internship** positions across **Belgium** 🇧🇪 and **Luxembourg** 🇱🇺.
 
 ---
 
-## Local Development (SQLite Setup)
-
-If you prefer to run the application locally without Docker:
-
-```bash
-# 1. Install dependencies
-pip install -r requirements.txt
-
-# 2. Copy the example environment file and configure variables
-cp .env.example .env
-
-# 3. Start the application (SQLite database will be created automatically)
-uvicorn app.main:app --host 0.0.0.0 --port 8011 --reload
-```
+## 📖 Complete API Usage & Local Setup
+For detailed endpoint usage, authentication flows, stock market data endpoints (Yahoo Finance), database configurations, and local execution steps, please refer to:
+👉 **[View Detailed API Usage & Examples Guide](Usage&examples.md)** *(formerly main README)*.
 
 ---
 
-## Running Tests
+## ⚡ Developer Productivity & Pre-PR Safeguards
 
-You can run the test suite to verify the application is working correctly:
+To maintain zero security debt and prevent broken builds, the repository includes instant local developer tooling:
+
+### 1. Git Pre-Commit Hooks (Instant 2-Second Scans)
+Automatically scans staged files on every `git commit` to block secrets and high-severity code flaws before code leaves your workstation:
 
 ```bash
-# Run pytest unit tests
-pytest
+# Enable repository githooks (one-time setup)
+git config core.hooksPath .githooks
+```
+- **Instant Secret Scan**: Runs `gitleaks protect --staged --verbose` to block secret leaks.
+- **Fast SAST Scan**: Runs `bandit -r app/ -ll -ii` to detect high-severity Python flaws.
 
-# Run the full endpoint integration tests (requires server running on localhost:8011)
-bash tests/test_all_endpoints.sh
+### 2. Single Dev Check Script (`dev-check.ps1`)
+A 30-second automated pre-PR validation script run right before pushing branches or opening Pull Requests:
 
-# Run end-to-end demo script
-bash demo.sh
+```powershell
+# Run full pre-PR verification suite (~30s)
+.\dev-check.ps1
 ```
 
----
-
-## Security Features
-
-This API includes production-ready cybersecurity measures:
-- **Rate Limiting**: Limits login requests on `/auth/login` and `/auth/login/json` to 5 requests per minute to prevent brute-force attacks.
-- **Security Headers**: Standard secure HTTP headers are injected automatically via custom middleware (e.g. `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Strict-Transport-Security`).
-- **Dynamic CORS**: Allowed origins can be dynamically configured via the `ALLOWED_ORIGINS` environment variable.
-- **CI/CD Security Pipelines**: Automated security checks run on push and PR to `main`:
-  - **Bandit**: Static Application Security Testing (SAST) to check for insecure code or hardcoded keys.
-  - **Trivy**: Dependency vulnerability scanner to flag outdated packages.
-
----
-
-## Environment Variables (`.env`)
-
-```env
-# Database URL (PostgreSQL container connection)
-DATABASE_URL=postgresql://postgres:postgres_secure_pass@db:5432/trading_db
-
-# JWT Configuration
-SECRET_KEY=change-this-to-a-very-secure-random-secret-key-for-production
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=60
-REFRESH_TOKEN_EXPIRE_DAYS=7
-
-# CORS allowed origins (comma-separated list, e.g., http://localhost:3000,http://localhost:8000)
-ALLOWED_ORIGINS=*
-
-# Ticker universe
-PRIMARY_TICKER_CSV=https://raw.githubusercontent.com/abbadata/stock-tickers/main/data/all.csv
-SECONDARY_TICKER_CSV=https://raw.githubusercontent.com/Ate329/top-us-stock-tickers/main/tickers/all.csv
-TICKER_UPDATE_INTERVAL_HOURS=12
-PRICE_API_PROVIDER=yfinance
 ```
+🔍 Starting AlphaTracer DevSecOps Pre-PR Checks...
 
-All real-time prices, historical candles, and financial metrics come from **Yahoo Finance via yfinance** — completely free, no API key or account required.
+🧪 [1/6] Running Pytest Unit Tests... 19 passed in 0.94s ✅
+🛡️ [2/6] Running Bandit SAST Code Analysis... ✅
+🔒 [3/6] Running Gitleaks Secret Detection... no leaks found ✅
+🏗️ [4/6] Validating Terraform Infrastructure Code... Success! ✅
+📜 [5/6] Validating Kyverno Policy-as-Code Manifests... valid (dry run) ✅
+📦 [6/6] Building Kustomize Kubernetes Production Overlay... ✅
 
----
-
-## API Reference
-
-### Base URL: `http://localhost:8011/api/v1`
-
----
-
-### Authentication
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/auth/register` | No | Create account |
-| POST | `/auth/login` | No | OAuth2 form login → JWT tokens |
-| POST | `/auth/login/json` | No | JSON body login → JWT tokens |
-| POST | `/auth/refresh` | Bearer | Refresh access token |
-
-**Register:**
-```bash
-curl -X POST http://localhost:8011/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email": "alice@example.com", "password": "secret123", "full_name": "Alice"}'
-# → 201 {"id": 1, "email": "alice@example.com", "full_name": "Alice", ...}
-```
-
-**Login (OAuth2 form — `username` field holds the email):**
-```bash
-curl -X POST http://localhost:8011/api/v1/auth/login \
-  -F "username=alice@example.com" \
-  -F "password=secret123"
-# → {"access_token": "...", "refresh_token": "...", "token_type": "bearer"}
-```
-
-**Login (JSON body — alternative):**
-```bash
-curl -X POST http://localhost:8011/api/v1/auth/login/json \
-  -H "Content-Type: application/json" \
-  -d '{"email": "alice@example.com", "password": "secret123"}'
-```
-
-**Refresh:**
-```bash
-curl -X POST http://localhost:8011/api/v1/auth/refresh \
-  -H "Authorization: Bearer $TOKEN"
+🎉 ALL PRE-PR CHECKS PASSED SUCCESSFULLY! Ready to push & open PR. 🚀
 ```
 
 ---
 
-### Users
+## 🖥️ Zero Cloud Cost & Live 3-Node K3s Cluster Architecture
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/users/me` | Bearer | Get profile |
-| PUT | `/users/me` | Bearer | Update full_name |
-| DELETE | `/users/me` | Bearer | Delete account |
+Unlike projects dependent on paid cloud resources (AWS/Azure/GCP), this environment demonstrates **practical, hands-on cluster administration**, bare-metal networking, and GitOps on a self-hosted **3-Node K3s Kubernetes Cluster** with **$0 cloud cost**.
 
-```bash
-TOKEN="your_access_token_here"
+### Live Cluster Topology (`kubectl get nodes -o wide`)
 
-# Get profile
-curl http://localhost:8011/api/v1/users/me \
-  -H "Authorization: Bearer $TOKEN"
+```
+NAME        STATUS   ROLES           VERSION        INTERNAL-IP      OS-IMAGE           CONTAINER-RUNTIME
+k3smaster   Ready    control-plane   v1.36.2+k3s1   192.168.56.109   Ubuntu 26.04 LTS   containerd://2.3.2-k3s2
+k3sslave1   Ready    <none>          v1.36.2+k3s1   10.0.2.15        Ubuntu 26.04 LTS   containerd://2.3.2-k3s2
+k3sslave2   Ready    <none>          v1.36.2+k3s1   10.0.2.15        Ubuntu 26.04 LTS   containerd://2.3.2-k3s2
+```
 
-# Update name
-curl -X PUT http://localhost:8011/api/v1/users/me \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"full_name": "Alice Smith"}'
+### Live Cluster Namespaces & Component Architecture
 
-# Delete account
-curl -X DELETE http://localhost:8011/api/v1/users/me \
-  -H "Authorization: Bearer $TOKEN"
+```mermaid
+graph TB
+    subgraph Master_Node ["K3s Master Node (k3smaster @ 192.168.56.109)"]
+        API_Server["K8s API Server & Control Plane"]
+
+        subgraph NS_ArgoCD ["namespace: argocd"]
+            ArgoServer["argocd-server"]
+            ArgoController["argocd-application-controller"]
+            ArgoRepo["argocd-repo-server"]
+        end
+
+        subgraph NS_Kyverno ["namespace: kyverno"]
+            KyvernoAdm["kyverno-admission-controller"]
+            KyvernoBg["kyverno-background-controller"]
+            KyvernoClean["kyverno-cleanup-controller"]
+        end
+
+        subgraph NS_Monitoring ["namespace: monitoring"]
+            Prometheus["prometheus-server"]
+            Grafana["grafana-dashboard"]
+            KubeState["kube-state-metrics"]
+        end
+
+        subgraph NS_App ["namespace: alphatracer"]
+            API_Pod1["alphatracer-api-pod-1"]
+            API_Pod2["alphatracer-api-pod-2"]
+            DB_Secret["alphatracer-secrets"]
+        end
+    end
+
+    subgraph Slave_Node1 ["Worker Node (k3sslave1)"]
+        NodeExp1["node-exporter"]
+    end
+
+    subgraph Slave_Node2 ["Worker Node (k3sslave2)"]
+        NodeExp2["node-exporter"]
+    end
+
+    ArgoController -->|GitOps Declarative Sync| NS_App
+    KyvernoAdm -->|Admission Webhook Guardrail| API_Server
+    Prometheus -->|Scrape Metrics| NS_App
+    Prometheus -->|Node Metrics| NodeExp1
+    Prometheus -->|Node Metrics| NodeExp2
 ```
 
 ---
 
-### Stocks
+## 🎯 Executive Summary & DevSecOps Flow
 
-Stock search queries the **local SQLite database**, which is populated from both CSV sources at startup. This means every ticker in either CSV — including AAPL, TSLA, MSFT — is always searchable from the first request.
+**AlphaTracer** is a high-performance Python FastAPI service providing real-time financial market data, technical indicators, and portfolio tracking backed by PostgreSQL.
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/stocks/search?q=` | No | Search by ticker or company name |
-| GET | `/stocks/{ticker}` | No | Stock detail (from DB / CSV) |
-| GET | `/stocks/{ticker}/price` | No | Live price via Yahoo Finance |
-| GET | `/stocks/{ticker}/metrics` | No | Full financials via Yahoo Finance |
+The project demonstrates an end-to-end continuous delivery pipeline from git commit to cluster deployment:
 
-**Search** — fuzzy match on ticker symbol and company name:
-```bash
-# Search by company name
-curl "http://localhost:8011/api/v1/stocks/search?q=apple&limit=5"
+```mermaid
+flowchart TD
+    subgraph Local_Developer["Local Developer Workstation"]
+        Hook[Git Pre-Commit Hook - Gitleaks & Bandit] --> Check[dev-check.ps1 Pre-PR Script]
+    end
 
-# Search by ticker prefix
-curl "http://localhost:8011/api/v1/stocks/search?q=AAPL"
+    subgraph Developer_Workflow["CI Pipeline"]
+        Check -->|Push / Open PR| B[Full CI/CD Pipeline Orchestrator]
+    end
 
-# Search with higher limit
-curl "http://localhost:8011/api/v1/stocks/search?q=microsoft&limit=10"
-```
+    subgraph Security_Gate["Reusable DevSecOps Gate (Shift-Left)"]
+        B --> C[Unit Tests - Pytest]
+        B --> D[SAST Scanning - Bandit]
+        B --> E[Secret Scanning - Gitleaks]
+        E --> F[Container Vulnerability Scan - Trivy]
+        F -->|Upload SARIF| G[GitHub Security Dashboard]
+        F --> H[SBOM Generation - Syft]
+        F --> I[Keyless Image Signing - Cosign / OIDC]
+        I --> J[Push Image to GHCR]
+    end
 
-Search scoring (higher = more relevant):
-- `20` — exact ticker or full name match
-- `15` — ticker starts with query
-- `12` — company name starts with query
-- `10` — query appears inside ticker
-- `7` — query appears inside company name
-- `6` — any word in company name starts with query
-- `≤4` — character overlap fallback
+    subgraph IaC_Validation["Zero-Cost IaC"]
+        J --> K[Terraform Plan - Dry-Run Verification]
+    end
 
-**Detail + price:**
-```bash
-# Stock info from DB
-curl http://localhost:8011/api/v1/stocks/AAPL
+    subgraph GitOps_Deployment["GitOps Delivery on On-Prem K3s"]
+        K --> L[Kustomize Image Tag Auto-Commit]
+        L -->|Sync Trigger| M[ArgoCD Engine on K3s Master 192.168.56.109]
+        M --> N[Kubernetes Deployment - Prod Overlay]
+    end
 
-# Live price (Yahoo Finance, cached 60 s)
-curl http://localhost:8011/api/v1/stocks/AAPL/price
-# → {"ticker": "AAPL", "price": 187.42}
-```
-
-**Financial metrics** (all from Yahoo Finance, cached 5 min):
-```bash
-curl http://localhost:8011/api/v1/stocks/AAPL/metrics
-```
-Returns: EPS, P/E (trailing + forward), PEG, P/B, P/S, gross/operating/net margin, ROE, ROA, ROI/ROIC, current ratio, quick ratio, debt/equity, revenue growth, earnings growth, beta, 52-week high/low.
-
----
-
-### Portfolio & Transactions
-
-All portfolio data is per-user (JWT required). Live prices are fetched from Yahoo Finance when viewing holdings.
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/portfolio` | Bearer | Holdings snapshot with live P&L |
-| GET | `/portfolio/metrics` | Bearer | Aggregated metrics (weighted P/E, beta) |
-| POST | `/portfolio/transactions` | Bearer | Record a buy or sell |
-| GET | `/portfolio/transactions` | Bearer | List transactions (filterable) |
-| PUT | `/portfolio/transactions/{id}` | Bearer | Correct a transaction |
-| DELETE | `/portfolio/transactions/{id}` | Bearer | Delete a transaction |
-
-**Buy:**
-```bash
-curl -X POST http://localhost:8011/api/v1/portfolio/transactions \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "stock_ticker": "AAPL",
-    "type": "buy",
-    "quantity": 10,
-    "price_per_share": 175.50,
-    "transaction_date": "2026-01-15"
-  }'
-# → 201 {"id": 1, "stock_ticker": "AAPL", "stock_name": "Apple Inc.", "type": "buy", ...}
-```
-
-**Sell** (validated — cannot sell more than held):
-```bash
-curl -X POST http://localhost:8011/api/v1/portfolio/transactions \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"stock_ticker": "AAPL", "type": "sell", "quantity": 5, "price_per_share": 190.00}'
-```
-
-**Portfolio snapshot** (with live prices and P&L):
-```bash
-curl http://localhost:8011/api/v1/portfolio \
-  -H "Authorization: Bearer $TOKEN"
-# → {"user_id": 1, "total_cost": 1755.0, "current_value": 1874.2,
-#    "holdings": [{"stock_ticker": "AAPL", "quantity": 5, "gain_loss": 119.2, ...}]}
-```
-
-**Filter transactions:**
-```bash
-# By ticker
-curl "http://localhost:8011/api/v1/portfolio/transactions?stock_ticker=AAPL" \
-  -H "Authorization: Bearer $TOKEN"
-
-# By type
-curl "http://localhost:8011/api/v1/portfolio/transactions?transaction_type=buy" \
-  -H "Authorization: Bearer $TOKEN"
+    subgraph Policy_Observability["Runtime Security & Monitoring"]
+        N --> O[Kyverno Policy Enforcement - Disallow Root User]
+        N --> P[Prometheus / Grafana Monitoring Stack]
+    end
 ```
 
 ---
 
-### Watchlist
+## 🛡️ Policy-as-Code Enforcement (Kyverno)
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/watchlist` | Bearer | Watchlist with live prices |
-| POST | `/watchlist/{ticker}` | Bearer | Add ticker (201 / 409 if duplicate) |
-| DELETE | `/watchlist/{ticker}` | Bearer | Remove ticker |
+Kyverno admission controller enforces zero-trust container security policies live on the K3s cluster:
 
-```bash
-# Add
-curl -X POST http://localhost:8011/api/v1/watchlist/TSLA \
-  -H "Authorization: Bearer $TOKEN"
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Dev as Developer / kubectl
+    participant K8s as K8s API Server
+    participant Kyverno as Kyverno Admission Webhook
+    participant Cluster as K3s Cluster State
 
-# View (includes live price per ticker)
-curl http://localhost:8011/api/v1/watchlist \
-  -H "Authorization: Bearer $TOKEN"
+    Dev->>K8s: kubectl run bad-pod --image=nginx (runAsRoot)
+    K8s->>Kyverno: Intercept Pod Creation Request
+    Kyverno->>Kyverno: Evaluate ClusterPolicy: disallow-root
+    Note over Kyverno: Container lacks runAsNonRoot: true
+    Kyverno-->>K8s: REJECT (Admission Webhook Denied)
+    K8s-->>Dev: ERROR: Pod blocked by disallow-root policy!
 
-# Remove
-curl -X DELETE http://localhost:8011/api/v1/watchlist/TSLA \
-  -H "Authorization: Bearer $TOKEN"
+    Dev->>K8s: kubectl apply -f deployment.yaml (runAsNonRoot: true)
+    K8s->>Kyverno: Intercept Pod Creation Request
+    Kyverno->>Kyverno: Evaluate ClusterPolicy: disallow-root
+    Kyverno-->>K8s: ALLOW (Validation Passed)
+    K8s->>Cluster: Schedule Pod to Worker Node
+    K8s-->>Dev: pod/alphatracer-api created successfully
 ```
 
 ---
 
-### Market Data
+## 🛠️ Complete DevSecOps Toolchain Summary
 
-All market data comes from **Yahoo Finance (yfinance) — free, no API key**. Every candle fetch is saved to the local `stock_price_history` SQLite table so history accumulates over time.
+| Category | Tool | Purpose / Implementation | Verification |
+| :--- | :--- | :--- | :--- |
+| **API Application** | **FastAPI + PostgreSQL** | Financial market data & portfolio tracking backend | Tested via pytest & docker-compose |
+| **Local Pre-Commit** | **Githooks + Gitleaks** | Instant 2s secret scan & lint check on `git commit` | `.githooks/pre-commit` |
+| **Pre-PR Developer Check**| **dev-check.ps1** | 30s single script running Pytest, SAST, Gitleaks, Terraform & Kustomize | Verified clean execution |
+| **CI/CD Orchestration** | **GitHub Actions** | Automated testing, security scanning, IaC plan, and GitOps image update | Free Public Tier Workflows |
+| **Secret Scanning** | **Gitleaks** | Full git history scanning using custom `.gitleaks.toml` ruleset | Integrated in CI pipeline |
+| **SAST** | **Bandit** | Static analysis of Python code for security flaws | Integrated in CI pipeline |
+| **Container CVE Scan** | **Trivy** | Vulnerability scanning of built Docker images; outputs SARIF reports | Exported to GitHub Security tab |
+| **Software Supply Chain**| **Syft (Anchore)** | Generates SPDX Software Bill of Materials (**SBOM**) | Saved as pipeline artifact |
+| **Cryptographic Provenance**| **Cosign (Sigstore)**| Keyless image signing using GitHub OIDC tokens | Published to GHCR |
+| **Infrastructure as Code**| **Terraform** | Modular AWS EKS & VPC IaC HCL definitions (`main.tf`, `variables.tf`) | Dry-run `terraform plan` in CI |
+| **Manifest Management** | **Kustomize** | Declarative manifest management (`base` & `overlays/prod`) | Automated image tag updates |
+| **GitOps Delivery Engine**| **ArgoCD** | Declarative continuous delivery and auto-sync on K3s cluster | Running in `argocd` namespace |
+| **Policy Engine** | **Kyverno** | Admission control policy (`disallow-root.yaml`) blocking root pods | Live tested on K3s cluster |
+| **Observability Stack** | **Prometheus + Grafana**| Metrics scraping (`/metrics`) and cluster node monitoring | Running in `monitoring` namespace |
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/market/{ticker}/quote` | No | Live OHLC quote |
-| GET | `/market/{ticker}/analysis` | No | Full TradingView-style analysis |
-| GET | `/market/{ticker}/analysis/max` | No | Fetch + save maximum available history |
-| GET | `/market/{ticker}/candles` | No | Raw OHLCV bars from Yahoo Finance |
-| GET | `/market/{ticker}/candles/stored` | No | Candles from local DB (no API call) |
-| GET | `/market/{ticker}/indicators` | No | Indicators only (no candle list) |
-| GET | `/market/compare/quotes` | No | Side-by-side quotes for up to 10 tickers |
-| GET | `/market/info/max-periods` | No | Max history per interval reference |
+---
 
-**Live quote:**
-```bash
-curl http://localhost:8011/api/v1/market/AAPL/quote
-# → {"ticker": "AAPL", "price": 187.42, "change_pct": 0.83,
-#    "week_52_high": 199.62, "week_52_low": 164.08, ...}
+## 🇧🇪🇱🇺 Market Alignment & Target Roles (Belgium & Luxembourg)
+
 ```
-
-**Full analysis** (quote + candles + all indicators + signal, candles saved to DB):
-```bash
-curl "http://localhost:8011/api/v1/market/AAPL/analysis?interval=1d&period=3mo"
-```
-
-Returns:
-- **Quote**: price, OHLC, change %, amplitude %, market cap, 52-week range
-- **Candles**: last 200 OHLCV bars
-- **Moving averages**: SMA 20/50/200, EMA 9/21/50, VWAP
-- **Oscillators**: RSI-14, Stochastic %K/%D, CCI-20, Williams %R, MACD (line/signal/histogram), ADX-14 (+DI/−DI)
-- **Volatility**: Bollinger Bands (upper/middle/lower/width/%B), ATR-14
-- **Volume**: OBV, relative volume
-- **Signal**: overall rating (STRONG BUY / BUY / NEUTRAL / SELL / STRONG SELL) + per-indicator breakdown
-- **bars_saved**: number of candles upserted to local DB this call
-
-**Valid intervals:** `1m` `2m` `5m` `15m` `30m` `60m` `90m` `1h` `1d` `5d` `1wk` `1mo` `3mo`  
-**Valid periods:** `1d` `5d` `1mo` `3mo` `6mo` `1y` `2y` `5y` `10y` `ytd` `max`
-
-**Fetch + save maximum available history** (run once to populate DB):
-```bash
-# Daily candles — full history (decades for major stocks like AAPL)
-curl "http://localhost:8011/api/v1/market/AAPL/analysis/max?interval=1d"
-
-# 1-hour candles — ~2 years
-curl "http://localhost:8011/api/v1/market/AAPL/analysis/max?interval=1h"
-```
-
-Maximum history yfinance provides per interval:
-
-| Interval | Max history |
-|----------|-------------|
-| `1m` | 7 days |
-| `2m` `5m` `15m` `30m` `90m` | 60 days |
-| `1h` `60m` | ~2 years (730 days) |
-| `1d` `5d` `1wk` `1mo` `3mo` | Full history (decades) |
-
-**Query stored candles** (from local DB, no Yahoo Finance call):
-```bash
-# All stored daily candles for AAPL
-curl "http://localhost:8011/api/v1/market/AAPL/candles/stored?interval=1d"
-
-# Date range
-curl "http://localhost:8011/api/v1/market/AAPL/candles/stored?interval=1d&start=2024-01-01&end=2024-12-31"
-
-# Intraday with limit
-curl "http://localhost:8011/api/v1/market/AAPL/candles/stored?interval=1h&limit=100"
-```
-
-**Compare quotes:**
-```bash
-curl "http://localhost:8011/api/v1/market/compare/quotes?tickers=AAPL,TSLA,MSFT,NVDA"
-# → {"count": 4, "quotes": [{...}, {...}, {...}, {...}]}
-```
-
-**Indicators only** (no candle list in response — faster for dashboards):
-```bash
-curl "http://localhost:8011/api/v1/market/MSFT/indicators?interval=1d&period=6mo"
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    BENELUX RECRUITER VALUE PROPOSITION                  │
+├───────────────────────────────────────┬─────────────────────────────────┤
+│ Luxembourg Fintech & Financial Sector  │ Belgium Enterprise & Consultancy│
+├───────────────────────────────────────┼─────────────────────────────────┤
+│ ✔ DORA & NIS2 Audit Readiness         │ ✔ Multi-Node K3s Cluster Admin  │
+│ ✔ SARIF Dashboard Security Tracking   │ ✔ Declarative GitOps (ArgoCD)   │
+│ ✔ Cryptographic Supply Chain (Cosign) │ ✔ Modular GitHub Actions & IaC  │
+│ ✔ Policy-as-Code (Kyverno Enforcement)│ ✔ Pre-Commit & dev-check.ps1    │
+└───────────────────────────────────────┴─────────────────────────────────┘
 ```
 
 ---
 
-## Architecture
+## 📝 Architecture Decision Records (ADRs)
 
-```
-app/
-├── main.py                      # FastAPI app + lifespan (creates tables, pre-warms CSV)
-├── api/v1/
-│   ├── auth.py                  # Register / login (form + JSON) / refresh
-│   ├── users.py                 # GET / PUT / DELETE /users/me
-│   ├── stocks.py                # Search (DB-backed), detail, price, metrics
-│   ├── portfolio.py             # Holdings, buy/sell/update/delete transactions
-│   ├── watchlist.py             # Add / list / remove watched stocks
-│   └── market.py                # Live quotes, full analysis, candles, indicators
-├── core/
-│   ├── config.py                # Pydantic settings (reads .env)
-│   ├── database.py              # SQLAlchemy engine + session (SQLite)
-│   └── security.py              # JWT (PyJWT), bcrypt password hashing
-├── db/
-│   ├── models.py                # User, Stock, StockPriceHistory, Transaction, Watchlist
-│   └── migrations/              # Alembic migrations (optional — auto-create used by default)
-├── schemas/
-│   ├── user.py                  # Pydantic user schemas (lenient email validator)
-│   ├── stock.py                 # Stock + watchlist response schemas
-│   └── transaction.py           # Transaction + portfolio schemas
-├── services/
-│   ├── price_service.py         # yfinance price fetch (60 s cache)
-│   ├── market_data_service.py   # Full OHLCV + indicators + DB persistence
-│   └── metrics_service.py       # Financial metrics (P/E, ROE, margins …)
-└── utils/
-    └── csv_loader.py            # GitHub CSV ticker loader + fuzzy scoring
-```
+### [ADR-001] Trivy Container Scanning over Grype
+- **Decision**: Standardized on **Trivy** for single-pass OS and dependency scanning with native SARIF output for GitHub Security tab integration.
 
-**Database tables (SQLite `trading.db`):**
+### [ADR-002] Security Gate Halts on HIGH & CRITICAL Findings Only
+- **Decision**: Automated build breaks occur strictly on `HIGH` or `CRITICAL` severity CVEs to enforce DORA compliance while preserving developer velocity.
 
-| Table | Purpose |
-|-------|---------|
-| `users` | Accounts + hashed passwords |
-| `stocks` | Ticker universe (populated from CSVs at startup) |
-| `stock_price_history` | Persistent OHLCV candles (upserted on every market fetch) |
-| `transactions` | Buy/sell records per user |
-| `watchlists` | Per-user watched tickers |
+### [ADR-003] ArgoCD for Declarative GitOps
+- **Decision**: Adopted **ArgoCD** for continuous deployment and visual sync status, matching the standard stack in Benelux financial institutions and consultancies.
+
+### [ADR-004] Keyless Container Signing via Cosign & OIDC
+- **Decision**: Implemented keyless signing leveraging GitHub short-lived OIDC identity tokens, reaching SLSA Level 3 supply chain security without managing static secret keys.
+
+### [ADR-005] Self-Hosted 3-Node K3s Cluster over Paid Cloud EKS/AKS
+- **Decision**: Built and deployed a **3-node K3s cluster** (`k3smaster` + 2 workers) on VirtualBox/local nodes (`192.168.56.109`), achieving full production Kubernetes parity, containerd runtime operations, and live ArgoCD/Kyverno/Prometheus execution with **$0 cloud cost**.
 
 ---
 
-## Bug Fixes Applied
+## 📂 Repository Structure
 
-| # | File | Bug | Fix |
-|---|------|-----|-----|
-| 1 | `schemas/user.py` | `EmailStr` (pydantic) rejected valid test-domain emails like `@alphatracer.test` due to TLD registry checks | Replaced with `LenientEmail` — regex-only structural validation, no TLD lookup |
-| 2 | `utils/csv_loader.py` | `fuzzy_match_score` character-overlap fallback only checked the **ticker** string, not the company name — noisy scores for unrelated results | Fallback now checks both ticker and name (`set(ticker + " " + name)`) |
-| 3 | `api/v1/stocks.py` | Search iterated in-memory CSV dict — AAPL absent from primary CSV (OTC list), would miss common tickers | Search now queries SQLite directly with `LIKE` on both `ticker` and `name`, then re-scores. DB is pre-populated from both CSVs at startup |
-| 4 | `api/v1/portfolio.py` | After `db.commit()`, SQLAlchemy identity-map could return a stale cached `Stock` row, causing wrong ticker on the transaction response (AAPL stored as AUMN) | Added `db.expire()` + `db.refresh()` post-commit; also resolved stock name from yfinance when CSV has no entry |
-| 5 | `main.py` | CSV ticker data loaded lazily on first search request — tickers not in DB during concurrent startup requests | `lifespan` now calls `load_tickers()` at boot, pre-populating DB before any request is served |
+```
+alphatracer-financial-api/
+├── .githooks/
+│   └── pre-commit                  # Instant 2s pre-commit hook (gitleaks & bandit)
+├── .github/
+│   └── workflows/
+│       ├── main-ci.yml             # Orchestrator pipeline (Test, SAST, Security, IaC, GitOps)
+│       └── reusable-security.yml   # Reusable SecOps pipeline (Gitleaks, Trivy, SBOM, Cosign)
+├── app/                            # FastAPI application code & endpoints
+├── infrastructure/
+│   ├── terraform/                  # Terraform IaC (main.tf, variables.tf, backend.tf)
+│   └── kubernetes/                 # Kubernetes Kustomize manifests & ArgoCD app
+│       ├── base/                   # Base deployment & service definitions
+│       └── overlays/prod/          # Production environment kustomization
+├── policies/
+│   └── kyverno/
+│       └── disallow-root.yaml      # Kyverno policy enforcing non-root containers
+├── tests/                          # Pytest test suite & endpoint integration scripts
+├── .gitleaks.toml                  # Gitleaks secret scanning ruleset
+├── dev-check.ps1                   # 30-second pre-PR developer validation script
+├── Dockerfile                      # Multi-stage production container build
+├── docker-compose.yml              # Production setup with PostgreSQL database
+├── README.md                       # Main Recruiter & DevSecOps Architecture Overview
+└── Usage&examples.md               # Detailed API Reference & Local Developer Guide
+```
 
 ---
 
-## Data Sources
+## ⚡ Quick Start & Verification Commands
 
-| Data | Source | Cost | Rate limit |
-|------|--------|------|------------|
-| Ticker universe | Two GitHub CSV files (configured in `.env`) | Free | Downloaded once per 12 h |
-| Live prices | Yahoo Finance via `yfinance` | Free | ~2000 req/hour (cached 60 s) |
-| Historical candles | Yahoo Finance via `yfinance` | Free | Cached 5 min; saved to SQLite |
-| Financial metrics | Yahoo Finance via `yfinance` | Free | Cached 5 min per ticker |
+From the repository root (`alphatracer-financial-api`):
+
+```powershell
+# 1. Enable Git Pre-Commit Hooks
+git config core.hooksPath .githooks
+
+# 2. Run Pre-PR Validation Script
+.\dev-check.ps1
+
+# 3. Create Secret in alphatracer namespace
+kubectl -n alphatracer create secret generic alphatracer-secrets `
+  --from-literal=database-url="postgresql://postgres:pass@db:5432/trading_db" `
+  --from-literal=secret-key="your-very-secure-secret-key"
+
+# 4. Apply Kyverno Policy (Policy-as-Code)
+kubectl apply -f policies/kyverno/disallow-root.yaml
+
+# 5. Deploy ArgoCD Application
+kubectl apply -f infrastructure/kubernetes/argo-app.yaml
+```
+
+---
+
+## 🔗 Related Documentation
+- 📘 **[API Endpoints, Setup & Examples Guide](Usage&examples.md)**
+- 🛠️ **[Deployment Troubleshooting Notes](DEPLOYMENT_ISSUES.md)**
+- ⚙️ **[Local Environment Setup](README_SETUP.md)**
+
+---
+
+<p align="center">
+  <i>Built with passion to demonstrate hands-on Kubernetes administration, shift-left security, and zero-cost DevOps excellence. Open for DevOps, SecOps, and DevSecOps internship opportunities in Belgium 🇧🇪 and Luxembourg 🇱🇺.</i>
+</p>

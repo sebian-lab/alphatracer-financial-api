@@ -14,7 +14,12 @@ from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user, get_db_session
 from app.schemas.user import UserCreate, UserResponse, Token, LoginRequest
-from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token
+from app.core.security import (
+    hash_password,
+    verify_password,
+    create_access_token,
+    create_refresh_token,
+)
 from app.db.models import User as UserModel
 from app.utils.limiter import rate_limit_login
 
@@ -31,21 +36,26 @@ def _authenticate_user(email: str, password: str, db: Session) -> UserModel:
             headers={"WWW-Authenticate": "Bearer"},
         )
     if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is inactive")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Account is inactive"
+        )
     return user
 
 
 def _make_token_response(user: UserModel) -> Token:
     return Token(
-        access_token  = create_access_token(subject=user.email),
-        refresh_token = create_refresh_token(subject=user.email),
-        token_type    = "bearer",
+        access_token=create_access_token(subject=user.email),
+        refresh_token=create_refresh_token(subject=user.email),
+        token_type="bearer",
     )
 
 
 # ── register ──────────────────────────────────────────────────────────────────
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
+)
 def register(
     user_data: UserCreate,
     db: Session = Depends(get_db_session),
@@ -58,13 +68,15 @@ def register(
     ```
     """
     if db.query(UserModel).filter(UserModel.email == user_data.email.lower()).first():
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
-                            detail="A user with this email already exists")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A user with this email already exists",
+        )
 
     user = UserModel(
-        email           = user_data.email.lower(),
-        hashed_password = hash_password(user_data.password),
-        full_name       = user_data.full_name,
+        email=user_data.email.lower(),
+        hashed_password=hash_password(user_data.password),
+        full_name=user_data.full_name,
     )
     db.add(user)
     db.commit()
@@ -74,9 +86,13 @@ def register(
 
 # ── login: OAuth2 form (Swagger UI compatible) ────────────────────────────────
 
-@router.post("/login", response_model=Token,
-             summary="Login (OAuth2 form — use for Swagger Authorize)",
-             dependencies=[Depends(rate_limit_login)])
+
+@router.post(
+    "/login",
+    response_model=Token,
+    summary="Login (OAuth2 form — use for Swagger Authorize)",
+    dependencies=[Depends(rate_limit_login)],
+)
 def login_form(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db_session),
@@ -101,9 +117,13 @@ def login_form(
 
 # ── login: JSON body (curl/fetch friendly) ────────────────────────────────────
 
-@router.post("/login/json", response_model=Token,
-             summary="Login (JSON body — use for curl / frontend fetch)",
-             dependencies=[Depends(rate_limit_login)])
+
+@router.post(
+    "/login/json",
+    response_model=Token,
+    summary="Login (JSON body — use for curl / frontend fetch)",
+    dependencies=[Depends(rate_limit_login)],
+)
 def login_json(
     body: LoginRequest,
     db: Session = Depends(get_db_session),
@@ -126,6 +146,7 @@ def login_json(
 
 
 # ── refresh ───────────────────────────────────────────────────────────────────
+
 
 @router.post("/refresh", response_model=Token)
 def refresh_token(

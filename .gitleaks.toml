@@ -1,0 +1,22 @@
+title = "gitleaks enterprise secret detection ruleset"
+
+[[rules]]
+id = "generic-api-key"
+description = "Generic API Key / Secret Token"
+regex = '''(?i)(api[_-]?key|apikey|secret[_-]?key|access[_-]?token)['"]?\s*[:=]\s*['"][a-zA-Z0-9_\-\.]{12,}['"]'''
+
+[allowlist]
+description = "Allow example documentation templates, test keys, scripts, and workflow files"
+paths = [
+  '''\.md$''',
+  '''secret\.yaml\.example$''',
+  '''dev-check\.ps1$''',
+  '''scripts/.*''',
+  '''\.github/workflows/.*'''
+]
+regexes = [
+  '''test-secret-key-'''
+]
+commits = [
+  '''8ab0d0c49ce447f283d8669073b1230462bb06fe'''
+]

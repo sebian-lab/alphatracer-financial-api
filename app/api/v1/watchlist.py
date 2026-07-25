@@ -8,7 +8,11 @@ from typing import List
 
 from app.api.dependencies import get_current_user, get_db_session
 from app.schemas.stock import WatchlistItem
-from app.db.models import User as UserModel, Stock as StockModel, Watchlist as WatchlistModel
+from app.db.models import (
+    User as UserModel,
+    Stock as StockModel,
+    Watchlist as WatchlistModel,
+)
 from app.services.price_service import get_current_price
 
 router = APIRouter(prefix="/watchlist", tags=["Watchlist"])
@@ -21,6 +25,7 @@ def _resolve_stock(db: Session, ticker: str) -> StockModel:
         # Try enriching from CSV before giving up
         try:
             from app.utils.csv_loader import load_tickers
+
             ticker_data = load_tickers()
             data = ticker_data.get(ticker.upper())
             if data:
@@ -49,11 +54,7 @@ def get_watchlist(
     db: Session = Depends(get_db_session),
 ):
     """Get current user's watchlist with live prices."""
-    entries = (
-        db.query(WatchlistModel)
-        .filter(WatchlistModel.user_id == user.id)
-        .all()
-    )
+    entries = db.query(WatchlistModel).filter(WatchlistModel.user_id == user.id).all()
 
     return [
         WatchlistItem(
@@ -76,10 +77,14 @@ def add_to_watchlist(
     """Add a stock to the watchlist."""
     stock = _resolve_stock(db, ticker)
 
-    existing = db.query(WatchlistModel).filter(
-        WatchlistModel.user_id == user.id,
-        WatchlistModel.stock_id == stock.id,
-    ).first()
+    existing = (
+        db.query(WatchlistModel)
+        .filter(
+            WatchlistModel.user_id == user.id,
+            WatchlistModel.stock_id == stock.id,
+        )
+        .first()
+    )
 
     if existing:
         raise HTTPException(
@@ -113,10 +118,14 @@ def remove_from_watchlist(
             detail=f"Stock '{ticker.upper()}' not found",
         )
 
-    entry = db.query(WatchlistModel).filter(
-        WatchlistModel.user_id == user.id,
-        WatchlistModel.stock_id == stock.id,
-    ).first()
+    entry = (
+        db.query(WatchlistModel)
+        .filter(
+            WatchlistModel.user_id == user.id,
+            WatchlistModel.stock_id == stock.id,
+        )
+        .first()
+    )
 
     if not entry:
         raise HTTPException(

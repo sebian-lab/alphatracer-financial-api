@@ -1,8 +1,8 @@
 # Deployment Issues - Alphatracer Backend API
 
 ## Issue #1: Missing JWT Module
-**Severity:** Critical  
-**Status:** Fixed  
+**Severity:** Critical
+**Status:** Fixed
 
 ### Description
 The application fails to start with `ModuleNotFoundError: No module named 'jwt'`
@@ -18,8 +18,8 @@ We added `PyJWT>=2.7.0` explicitly to `requirements.txt` to guarantee availabili
 ---
 
 ## Issue #2: Alembic Binary Not in PATH
-**Severity:** Low (non-blocking)  
-**Status:** Workaround Applied  
+**Severity:** Low (non-blocking)
+**Status:** Workaround Applied
 
 ### Description
 The `alembic` command not found error, resolved by using `python -m alembic`.
@@ -30,8 +30,8 @@ Using Python module invocation instead of CLI binary works correctly.
 ---
 
 ## Issue #3: Scripts Not on PATH
-**Severity:** Low (informational)  
-**Status:** Documented  
+**Severity:** Low (informational)
+**Status:** Documented
 
 ### Description
 Scripts like `pyrsa-public-key` and `mako-render` installed to `~/.local/bin/` but not accessible system-wide.

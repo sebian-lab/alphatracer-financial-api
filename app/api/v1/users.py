@@ -2,13 +2,12 @@
 User profile endpoints.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user, get_db_session
 from app.schemas.user import UserResponse, UserUpdate
 from app.db.models import User as UserModel
-from app.core.security import hash_password
 
 router = APIRouter(prefix="/users", tags=["Users"])
 

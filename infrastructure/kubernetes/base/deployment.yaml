@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alphatracer
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: alphatracer
+  template:
+    metadata:
+      labels:
+        app: alphatracer
+    spec:
+      containers:
+      - name: api
+        image: ghcr.io/sebian-lab/alphatracer-financial-api:latest   # overwritten by Kustomize
+        ports:
+        - containerPort: 8011
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: alphatracer-secrets
+              key: database-url
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: alphatracer-secrets
+              key: secret-key
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000

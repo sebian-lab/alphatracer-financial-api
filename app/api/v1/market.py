@@ -17,29 +17,54 @@ Max history per interval (yfinance limits):
 
 from fastapi import APIRouter, Query, HTTPException, Depends
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import Optional
 from datetime import datetime
 
 from app.api.dependencies import get_db_session
 from app.services.market_data_service import (
-    get_market_data, get_market_data_max, get_quote_only,
-    FullAnalysis, Quote, OHLCVBar, _MAX_PERIOD,
+    get_market_data,
+    get_market_data_max,
+    get_quote_only,
+    FullAnalysis,
+    Quote,
+    OHLCVBar,
+    _MAX_PERIOD,
 )
 
 router = APIRouter(prefix="/market", tags=["Market Data"])
 
-VALID_INTERVALS = {"1m","2m","5m","15m","30m","60m","90m","1h","1d","5d","1wk","1mo","3mo"}
-VALID_PERIODS   = {"1d","5d","1mo","3mo","6mo","1y","2y","5y","10y","ytd","max"}
+VALID_INTERVALS = {
+    "1m",
+    "2m",
+    "5m",
+    "15m",
+    "30m",
+    "60m",
+    "90m",
+    "1h",
+    "1d",
+    "5d",
+    "1wk",
+    "1mo",
+    "3mo",
+}
+VALID_PERIODS = {"1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"}
 
 
 def _validate(interval: str, period: str):
     if interval not in VALID_INTERVALS:
-        raise HTTPException(400, f"Invalid interval '{interval}'. Choose from: {sorted(VALID_INTERVALS)}")
+        raise HTTPException(
+            400,
+            f"Invalid interval '{interval}'. Choose from: {sorted(VALID_INTERVALS)}",
+        )
     if period not in VALID_PERIODS:
-        raise HTTPException(400, f"Invalid period '{period}'. Choose from: {sorted(VALID_PERIODS)}")
+        raise HTTPException(
+            400, f"Invalid period '{period}'. Choose from: {sorted(VALID_PERIODS)}"
+        )
 
 
 # ── quote ─────────────────────────────────────────────────────────────────────
+
 
 @router.get("/{ticker}/quote", response_model=Quote, summary="Live quote")
 def get_quote(ticker: str):
@@ -57,12 +82,20 @@ def get_quote(ticker: str):
 
 # ── analysis ──────────────────────────────────────────────────────────────────
 
-@router.get("/{ticker}/analysis", response_model=FullAnalysis,
-            summary="Full TradingView-style analysis")
+
+@router.get(
+    "/{ticker}/analysis",
+    response_model=FullAnalysis,
+    summary="Full TradingView-style analysis",
+)
 def get_analysis(
-    ticker:   str,
-    interval: str = Query("1d",  description="Candle interval: 1m 5m 15m 30m 1h 1d 1wk 1mo"),
-    period:   str = Query("3mo", description="Lookback period: 1d 5d 1mo 3mo 6mo 1y 2y 5y"),
+    ticker: str,
+    interval: str = Query(
+        "1d", description="Candle interval: 1m 5m 15m 30m 1h 1d 1wk 1mo"
+    ),
+    period: str = Query(
+        "3mo", description="Lookback period: 1d 5d 1mo 3mo 6mo 1y 2y 5y"
+    ),
 ):
     """
     Full TradingView-style technical analysis — no auth, no API key.
@@ -79,10 +112,13 @@ def get_analysis(
     return result
 
 
-@router.get("/{ticker}/analysis/max", response_model=FullAnalysis,
-            summary="Fetch & save maximum available history")
+@router.get(
+    "/{ticker}/analysis/max",
+    response_model=FullAnalysis,
+    summary="Fetch & save maximum available history",
+)
 def get_analysis_max(
-    ticker:   str,
+    ticker: str,
     interval: str = Query("1d", description="Candle interval"),
 ):
     """
@@ -108,33 +144,36 @@ def get_analysis_max(
 
 # ── candles ───────────────────────────────────────────────────────────────────
 
+
 @router.get("/{ticker}/candles", summary="OHLCV candles from yfinance")
 def get_candles(
-    ticker:   str,
-    interval: str = Query("1d",  description="Candle interval"),
-    period:   str = Query("3mo", description="Lookback period"),
+    ticker: str,
+    interval: str = Query("1d", description="Candle interval"),
+    period: str = Query("3mo", description="Lookback period"),
 ):
     """Raw OHLCV bars fetched from yfinance and saved to DB."""
     _validate(interval, period)
     data = get_market_data(ticker.upper(), interval=interval, period=period)
     return {
-        "ticker":     ticker.upper(),
-        "interval":   interval,
-        "period":     period,
-        "count":      len(data.candles),
+        "ticker": ticker.upper(),
+        "interval": interval,
+        "period": period,
+        "count": len(data.candles),
         "bars_saved": data.bars_saved,
-        "candles":    data.candles,
+        "candles": data.candles,
     }
 
 
-@router.get("/{ticker}/candles/stored", summary="OHLCV candles from local DB (no yfinance)")
+@router.get(
+    "/{ticker}/candles/stored", summary="OHLCV candles from local DB (no yfinance)"
+)
 def get_stored_candles(
-    ticker:   str,
+    ticker: str,
     interval: str = Query("1d", description="Candle interval"),
-    start:    Optional[str] = Query(None, description="Start date YYYY-MM-DD"),
-    end:      Optional[str] = Query(None, description="End date YYYY-MM-DD"),
-    limit:    int = Query(500, ge=1, le=10000, description="Max bars to return"),
-    db:       Session = Depends(get_db_session),
+    start: Optional[str] = Query(None, description="Start date YYYY-MM-DD"),
+    end: Optional[str] = Query(None, description="End date YYYY-MM-DD"),
+    limit: int = Query(500, ge=1, le=10000, description="Max bars to return"),
+    db: Session = Depends(get_db_session),
 ):
     """
     Return candles that are already saved in the **local database** — no yfinance
@@ -149,7 +188,12 @@ def get_stored_candles(
 
     stock = db.query(StockModel).filter(StockModel.ticker == ticker.upper()).first()
     if not stock:
-        return {"ticker": ticker.upper(), "interval": interval, "count": 0, "candles": []}
+        return {
+            "ticker": ticker.upper(),
+            "interval": interval,
+            "count": 0,
+            "candles": [],
+        }
 
     q = db.query(StockPriceHistory).filter(
         StockPriceHistory.stock_id == stock.id,
@@ -157,7 +201,9 @@ def get_stored_candles(
     )
     if start:
         try:
-            q = q.filter(StockPriceHistory.bar_datetime >= datetime.fromisoformat(start))
+            q = q.filter(
+                StockPriceHistory.bar_datetime >= datetime.fromisoformat(start)
+            )
         except ValueError:
             raise HTTPException(400, f"Invalid start date '{start}'. Use YYYY-MM-DD.")
     if end:
@@ -170,30 +216,31 @@ def get_stored_candles(
 
     candles = [
         OHLCVBar(
-            datetime = r.bar_datetime.isoformat()[:19],
-            open     = round(r.open,  4),
-            high     = round(r.high,  4),
-            low      = round(r.low,   4),
-            close    = round(r.close, 4),
-            volume   = r.volume or 0.0,
+            datetime=r.bar_datetime.isoformat()[:19],
+            open=round(r.open, 4),
+            high=round(r.high, 4),
+            low=round(r.low, 4),
+            close=round(r.close, 4),
+            volume=r.volume or 0.0,
         )
         for r in rows
     ]
     return {
-        "ticker":   ticker.upper(),
+        "ticker": ticker.upper(),
         "interval": interval,
-        "count":    len(candles),
-        "candles":  candles,
+        "count": len(candles),
+        "candles": candles,
     }
 
 
 # ── indicators ────────────────────────────────────────────────────────────────
 
+
 @router.get("/{ticker}/indicators", summary="Technical indicators only (no candles)")
 def get_indicators(
-    ticker:   str,
-    interval: str = Query("1d",  description="Candle interval"),
-    period:   str = Query("3mo", description="Lookback period"),
+    ticker: str,
+    interval: str = Query("1d", description="Candle interval"),
+    period: str = Query("3mo", description="Lookback period"),
 ):
     """
     Returns MA, oscillators, volatility, volume, and signal — without the
@@ -202,20 +249,21 @@ def get_indicators(
     _validate(interval, period)
     data = get_market_data(ticker.upper(), interval=interval, period=period)
     return {
-        "ticker":      ticker.upper(),
-        "interval":    interval,
-        "period":      period,
-        "bars_saved":  data.bars_saved,
-        "quote":       data.quote,
-        "ma":          data.ma,
+        "ticker": ticker.upper(),
+        "interval": interval,
+        "period": period,
+        "bars_saved": data.bars_saved,
+        "quote": data.quote,
+        "ma": data.ma,
         "oscillators": data.oscillators,
-        "volatility":  data.volatility,
-        "volume":      data.volume,
-        "signal":      data.signal,
+        "volatility": data.volatility,
+        "volume": data.volume,
+        "signal": data.signal,
     }
 
 
 # ── compare ───────────────────────────────────────────────────────────────────
+
 
 @router.get("/compare/quotes", summary="Compare live quotes for multiple tickers")
 def compare_quotes(
@@ -240,6 +288,7 @@ def compare_quotes(
 
 # ── max period info ───────────────────────────────────────────────────────────
 
+
 @router.get("/info/max-periods", summary="Max history periods per interval")
 def max_periods():
     """
@@ -256,16 +305,16 @@ def max_periods():
 
 def _period_note(interval: str) -> str:
     notes = {
-        "1m":  "7 days max — yfinance hard limit",
-        "2m":  "60 days max",
-        "5m":  "60 days max",
+        "1m": "7 days max — yfinance hard limit",
+        "2m": "60 days max",
+        "5m": "60 days max",
         "15m": "60 days max",
         "30m": "60 days max",
         "60m": "~2 years (730 days)",
         "90m": "60 days max",
-        "1h":  "~2 years (730 days)",
-        "1d":  "Full history — decades for major stocks",
-        "5d":  "Full history",
+        "1h": "~2 years (730 days)",
+        "1d": "Full history — decades for major stocks",
+        "5d": "Full history",
         "1wk": "Full history",
         "1mo": "Full history",
         "3mo": "Full history",

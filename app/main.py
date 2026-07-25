@@ -15,6 +15,7 @@ from app.core.config import settings
 async def lifespan(app: FastAPI):
     """Application lifespan: create DB tables then pre-warm ticker cache."""
     from app.core.database import create_tables
+
     create_tables()
 
     # Pre-load both CSV sources into the DB so the first search request
@@ -22,6 +23,7 @@ async def lifespan(app: FastAPI):
     # available immediately for transaction/watchlist lookups.
     try:
         from app.utils.csv_loader import load_tickers
+
         tickers = load_tickers()
         print(f"[startup] ticker cache ready — {len(tickers)} tickers loaded")
     except Exception as exc:
@@ -57,7 +59,9 @@ def create_app() -> FastAPI:
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains"
+        )
         return response
 
     # All routes mounted under /api/v1/...

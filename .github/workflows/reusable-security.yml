@@ -1,0 +1,90 @@
+name: Reusable Security Pipeline
+on:
+  workflow_call:
+    inputs:
+      image-tag:
+        required: true
+        type: string
+    secrets:
+      COSIGN_PRIVATE_KEY:
+        required: false   # Keyless signing via GitHub OIDC (free!)
+      COSIGN_PASSWORD:
+        required: false
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      security-events: write
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 1. Secret scanning (Gitleaks) – full history
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          config: .gitleaks.toml
+
+      # 2. Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 3. Build image (for scanning only)
+      - name: Build image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          push: false
+          tags: alphatracer:${{ inputs.image-tag }}
+          outputs: type=docker,dest=/tmp/alphatracer.tar
+
+      # 4. Trivy container scan (fail on HIGH/CRITICAL)
+      - name: Trivy container scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: alphatracer:${{ inputs.image-tag }}
+          format: sarif
+          output: trivy-results.sarif
+          exit-code: '1'
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+
+      # 5. Upload SARIF to GitHub Security tab (Luxembourg compliance)
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+
+      # 6. Generate SBOM (Syft)
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: alphatracer:${{ inputs.image-tag }}
+          format: spdx-json
+          output-file: sbom.spdx.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.spdx.json
+
+      # 7. Push to GHCR and sign (keyless – FREE!)
+      - name: Push and Sign (keyless)
+        if: github.ref == 'refs/heads/main'
+        env:
+          COSIGN_EXPERIMENTAL: true
+        run: |
+          docker load -i /tmp/alphatracer.tar
+          docker tag alphatracer:${{ inputs.image-tag }} ghcr.io/${{ github.repository }}:${{ inputs.image-tag }}
+          docker push ghcr.io/${{ github.repository }}:${{ inputs.image-tag }}
+          cosign sign ghcr.io/${{ github.repository }}:${{ inputs.image-tag }}

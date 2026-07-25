@@ -16,9 +16,9 @@ from threading import Lock
 
 from app.core.config import settings
 
-PRIMARY_TICKER_CSV   = settings.PRIMARY_TICKER_CSV
+PRIMARY_TICKER_CSV = settings.PRIMARY_TICKER_CSV
 SECONDARY_TICKER_CSV = settings.SECONDARY_TICKER_CSV
-CACHE_TTL_HOURS      = settings.TICKER_UPDATE_INTERVAL_HOURS
+CACHE_TTL_HOURS = settings.TICKER_UPDATE_INTERVAL_HOURS
 
 # ── in-memory cache ──────────────────────────────────────────────────────────
 _cache: Dict[str, dict] = {}
@@ -29,6 +29,7 @@ _lock = Lock()
 # ─────────────────────────────────────────────────────────────────────────────
 # Public API
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def load_tickers(force_refresh: bool = False) -> Dict[str, dict]:
     """
@@ -54,10 +55,10 @@ def load_tickers(force_refresh: bool = False) -> Dict[str, dict]:
             ticker = _extract_ticker(row)
             if ticker:
                 merged[ticker] = {
-                    "name":     _extract_name(row, ticker),
-                    "sector":   row.get("sector", "").strip() or "Unknown",
+                    "name": _extract_name(row, ticker),
+                    "sector": row.get("sector", "").strip() or "Unknown",
                     "industry": row.get("industry", "").strip() or None,
-                    "source":   "primary",
+                    "source": "primary",
                 }
 
         # -- secondary source (fills gaps, never overwrites primary) ----------
@@ -68,10 +69,10 @@ def load_tickers(force_refresh: bool = False) -> Dict[str, dict]:
                 continue
             if ticker not in merged:
                 merged[ticker] = {
-                    "name":     _extract_name(row, ticker),
-                    "sector":   row.get("sector", "").strip() or "Unknown",
+                    "name": _extract_name(row, ticker),
+                    "sector": row.get("sector", "").strip() or "Unknown",
                     "industry": row.get("industry", "").strip() or None,
-                    "source":   "secondary",
+                    "source": "secondary",
                 }
             else:
                 # primary exists — only fill truly empty fields
@@ -82,7 +83,7 @@ def load_tickers(force_refresh: bool = False) -> Dict[str, dict]:
                     existing["industry"] = row.get("industry", "").strip() or None
 
         if merged:
-            _cache    = merged
+            _cache = merged
             _cache_ts = datetime.now()
             # Persist new tickers to DB in the background (best-effort)
             _persist_to_db(merged)
@@ -104,19 +105,25 @@ def fuzzy_match_score(ticker: str, name: str, query: str) -> float:
        6 — any word in name starts with query
        ≤4 — character overlap fallback (checks BOTH ticker AND name)
     """
-    q  = query.lower().strip()
-    t  = ticker.lower()
-    n  = name.lower() if name else ""
+    q = query.lower().strip()
+    t = ticker.lower()
+    n = name.lower() if name else ""
 
-    if t == q or n == q:          return 20.0
-    if t.startswith(q):           return 15.0
-    if n.startswith(q):           return 12.0
-    if q in t:                    return 10.0
-    if q in n:                    return  7.0
+    if t == q or n == q:
+        return 20.0
+    if t.startswith(q):
+        return 15.0
+    if n.startswith(q):
+        return 12.0
+    if q in t:
+        return 10.0
+    if q in n:
+        return 7.0
 
     # token match: any word in the company name starts with query
     for token in n.split():
-        if token.startswith(q):   return  6.0
+        if token.startswith(q):
+            return 6.0
 
     # character overlap fallback — check BOTH ticker AND name (bug fix: was ticker-only)
     combined = t + " " + n
@@ -128,6 +135,7 @@ def fuzzy_match_score(ticker: str, name: str, query: str) -> float:
 # ─────────────────────────────────────────────────────────────────────────────
 # Internal helpers
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _download_csv(url: str, label: str) -> List[dict]:
     """Download and parse a CSV from a URL into a list of row-dicts."""
@@ -148,13 +156,13 @@ def _download_csv(url: str, label: str) -> List[dict]:
 
 
 _TICKER_KEYS = ("symbol", "ticker", "sym", "code")
-_NAME_KEYS   = ("name", "company", "companyname", "company_name", "description")
+_NAME_KEYS = ("name", "company", "companyname", "company_name", "description")
 
 
 def _extract_ticker(row: dict) -> Optional[str]:
     for k in _TICKER_KEYS:
         val = row.get(k, "").strip().upper()
-        if val and re.match(r'^[A-Z]{1,5}(\.[A-Z]{1,2})?$', val):
+        if val and re.match(r"^[A-Z]{1,5}(\.[A-Z]{1,2})?$", val):
             return val
     return None
 
@@ -179,18 +187,18 @@ def _persist_to_db(tickers: Dict[str, dict]) -> None:
 
         db = SessionLocal()
         try:
-            existing_tickers = {
-                s.ticker for s in db.query(Stock.ticker).all()
-            }
+            existing_tickers = {s.ticker for s in db.query(Stock.ticker).all()}
             new_stocks = []
             for ticker, data in tickers.items():
                 if ticker not in existing_tickers:
-                    new_stocks.append(Stock(
-                        ticker   = ticker,
-                        name     = data.get("name") or ticker,
-                        sector   = data.get("sector") or "Unknown",
-                        industry = data.get("industry"),
-                    ))
+                    new_stocks.append(
+                        Stock(
+                            ticker=ticker,
+                            name=data.get("name") or ticker,
+                            sector=data.get("sector") or "Unknown",
+                            industry=data.get("industry"),
+                        )
+                    )
             if new_stocks:
                 db.bulk_save_objects(new_stocks)
                 db.commit()
