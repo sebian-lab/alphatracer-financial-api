@@ -30,17 +30,21 @@ router = APIRouter(prefix="/stocks", tags=["Stocks"])
 
 # ── helpers ────────────────────────────────────────────────────────────────────
 
+
 def _get_or_create_stock(
-    db: Session, ticker: str,
-    name: str = "", sector: str = "Unknown", industry: Optional[str] = None,
+    db: Session,
+    ticker: str,
+    name: str = "",
+    sector: str = "Unknown",
+    industry: Optional[str] = None,
 ) -> StockModel:
     stock = db.query(StockModel).filter(StockModel.ticker == ticker.upper()).first()
     if not stock:
         stock = StockModel(
-            ticker   = ticker.upper(),
-            name     = name or ticker.upper(),
-            sector   = sector,
-            industry = industry,
+            ticker=ticker.upper(),
+            name=name or ticker.upper(),
+            sector=sector,
+            industry=industry,
         )
         db.add(stock)
         db.commit()
@@ -61,11 +65,12 @@ def _ensure_csv_loaded() -> None:
 
 # ── endpoints ──────────────────────────────────────────────────────────────────
 
+
 @router.get("/search", response_model=List[StockResponse])
 def search_stocks(
-    q:     str     = Query(..., min_length=1, description="Ticker symbol or company name"),
-    limit: int     = Query(default=10, ge=1, le=100),
-    db:    Session = Depends(get_db_session),
+    q: str = Query(..., min_length=1, description="Ticker symbol or company name"),
+    limit: int = Query(default=10, ge=1, le=100),
+    db: Session = Depends(get_db_session),
 ):
     """
     Search stocks by ticker symbol or company name.
@@ -92,7 +97,7 @@ def search_stocks(
 
     q_clean = q.strip()
     q_upper = q_clean.upper()
-    q_like  = f"%{q_clean}%"
+    q_like = f"%{q_clean}%"
 
     # SQL: pull broad candidates — exact ticker OR ticker LIKE OR name LIKE
     # Fetch up to 500 candidates then re-rank in Python for precision
@@ -123,11 +128,11 @@ def search_stocks(
 
     return [
         StockResponse(
-            id       = s.id,
-            ticker   = s.ticker,
-            name     = s.name or s.ticker,
-            industry = s.industry,
-            sector   = s.sector or "Unknown",
+            id=s.id,
+            ticker=s.ticker,
+            name=s.name or s.ticker,
+            industry=s.industry,
+            sector=s.sector or "Unknown",
         )
         for _, s in scored[:limit]
     ]
@@ -141,7 +146,9 @@ def get_stock_price(ticker: str):
     """
     price = get_current_price(ticker.upper())
     if not price:
-        raise HTTPException(status_code=404, detail=f"Price unavailable for '{ticker.upper()}'")
+        raise HTTPException(
+            status_code=404, detail=f"Price unavailable for '{ticker.upper()}'"
+        )
     return {"ticker": ticker.upper(), "price": price}
 
 
@@ -175,7 +182,7 @@ def get_stock_metrics(ticker: str):
 @router.get("/{ticker}", response_model=StockResponse)
 def get_stock(
     ticker: str,
-    db:     Session = Depends(get_db_session),
+    db: Session = Depends(get_db_session),
 ):
     """
     Stock detail by ticker. Checks local DB first, then falls back to the
@@ -195,16 +202,20 @@ def get_stock(
         ticker_data = {}
 
     if ticker in ticker_data:
-        data  = ticker_data[ticker]
+        data = ticker_data[ticker]
         stock = _get_or_create_stock(
-            db, ticker,
-            name     = data.get("name", ticker),
-            sector   = data.get("sector", "Unknown"),
-            industry = data.get("industry"),
+            db,
+            ticker,
+            name=data.get("name", ticker),
+            sector=data.get("sector", "Unknown"),
+            industry=data.get("industry"),
         )
         return StockResponse(
-            id=stock.id, ticker=stock.ticker, name=stock.name,
-            industry=stock.industry, sector=stock.sector,
+            id=stock.id,
+            ticker=stock.ticker,
+            name=stock.name,
+            industry=stock.industry,
+            sector=stock.sector,
         )
 
     raise HTTPException(status_code=404, detail=f"Stock '{ticker}' not found")

@@ -20,7 +20,7 @@ def _lenient_email(v: str) -> str:
     """
     if not isinstance(v, str):
         raise ValueError("Email must be a string")
-    pattern = r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{1,}$'
+    pattern = r"^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{1,}$"
     if not re.match(pattern, v.strip()):
         raise ValueError(f"'{v}' is not a valid email address")
     return v.strip().lower()
@@ -62,5 +62,6 @@ class Token(BaseModel):
 
 class LoginRequest(BaseModel):
     """JSON body login — alternative to OAuth2 form."""
+
     email: LenientEmail
     password: str

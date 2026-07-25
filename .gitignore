@@ -14,6 +14,10 @@ env/
 .env.*
 *.env
 .flaskenv
+*.pem
+*.key
+secret.yaml
+!secret.yaml.example
 
 # Database (Local SQLite files)
 *.sqlite3
@@ -22,6 +26,17 @@ env/
 # Server and error logs
 *.log
 server.log
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Security Scans & Artifacts
+*.sarif
+*.spdx.json
+/tmp/
 
 # IDEs
 .vscode/

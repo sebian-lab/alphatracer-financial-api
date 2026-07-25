@@ -18,6 +18,7 @@ from app.core.config import settings
 
 # ── password hashing ──────────────────────────────────────────────────────────
 
+
 def hash_password(password: str) -> str:
     """Hash a plain-text password with bcrypt. Returns a utf-8 string."""
     # bcrypt spec: passwords > 72 bytes are truncated — we do it explicitly.
@@ -39,7 +40,10 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 # ── JWT ───────────────────────────────────────────────────────────────────────
 
-def create_access_token(subject: str, expires_delta_minutes: Optional[int] = None) -> str:
+
+def create_access_token(
+    subject: str, expires_delta_minutes: Optional[int] = None
+) -> str:
     expire = datetime.utcnow() + timedelta(
         minutes=expires_delta_minutes or settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )

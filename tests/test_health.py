@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.core.database import create_tables
 
+
 @pytest.fixture(scope="session", autouse=True)
 def setup_database():
     create_tables()
@@ -15,13 +16,16 @@ def setup_database():
         except Exception:
             pass
 
+
 client = TestClient(app)
+
 
 def test_health_check():
     """Verify that the health check endpoint returns 200 OK and status 'ok'."""
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
 
 def test_security_headers():
     """Verify that secure HTTP headers are injected into API responses."""
@@ -31,16 +35,17 @@ def test_security_headers():
     assert response.headers.get("X-XSS-Protection") == "1; mode=block"
     assert "max-age=" in response.headers.get("Strict-Transport-Security", "")
 
+
 def test_rate_limiting():
     """Verify that repeated logins eventually return 429 Too Many Requests."""
     # Let's perform multiple requests to trigger rate limiting
     # The limit is 5 attempts per 60 seconds.
     responses = []
     for _ in range(6):
-        response = client.post("/api/v1/auth/login/json", json={
-            "email": "nonexistent@test.com",
-            "password": "somepassword"
-        })
+        response = client.post(
+            "/api/v1/auth/login/json",
+            json={"email": "nonexistent@test.com", "password": "somepassword"},
+        )
         responses.append(response)
 
     # At least the last one should be rate limited (429)

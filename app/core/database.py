@@ -4,7 +4,7 @@ Supports both SQLite (dev) and PostgreSQL (production).
 """
 
 from typing import Generator
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from app.core.config import settings
 
@@ -53,4 +53,5 @@ def get_db_session() -> Generator:
 def create_tables():
     """Create all tables in the database."""
     from app.db.models import Base as ModelBase
+
     ModelBase.metadata.create_all(bind=engine)

@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: alphatracer
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/sebian-lab/alphatracer-financial-api
+    targetRevision: HEAD
+    path: infrastructure/kubernetes/overlays/prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: alphatracer
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
