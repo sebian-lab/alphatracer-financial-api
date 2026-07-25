@@ -67,10 +67,10 @@ jobs:
           terraform init -backend=false
           terraform plan
 
-  # 5. GitOps Image Update in Kustomize Overlays (Prod & Dev)
+  # 5. GitOps Image Update in Kustomize Overlays (Prod Only)
   update-manifest:
     needs: security
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
