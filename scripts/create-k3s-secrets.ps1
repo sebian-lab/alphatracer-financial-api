@@ -2,7 +2,8 @@
 # 🔑 Create Kubernetes Secrets for Prod (alphatracer) & Dev (alphatracer-dev)
 # ==============================================================================
 
-Write-Host "🔑 Creating Kubernetes Secrets in K3s Cluster..." -ForegroundColor Cyan
+Write-Host "Creating Kubernetes Secrets in K3s Cluster..." -ForegroundColor Cyan
+
 
 # 1. Ensure namespaces exist
 kubectl create namespace alphatracer --dry-run=client -o yaml | kubectl apply -f -
