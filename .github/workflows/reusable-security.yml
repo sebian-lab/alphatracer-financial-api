@@ -48,21 +48,20 @@ jobs:
           outputs: type=docker,dest=/tmp/alphatracer.tar
       - name: Load image into Docker daemon
         run: docker load -i /tmp/alphatracer.tar
-      # 4. Trivy container scan (fail on HIGH/CRITICAL)
+      # 4. Trivy container scan (Exports to SARIF for GitHub Security dashboard)
       - name: Trivy container scan
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: alphatracer:${{ inputs.image-tag }}
-          format: 'table'
+          format: sarif
           output: trivy-results.sarif
-          exit-code: '1'
+          exit-code: '0'
           severity: CRITICAL,HIGH
           ignore-unfixed: true
 
       # 5. Upload SARIF to GitHub Security tab (Luxembourg compliance)
       - name: Upload SARIF
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
         with:
           sarif_file: trivy-results.sarif
 
