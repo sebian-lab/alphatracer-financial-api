@@ -62,6 +62,7 @@ jobs:
       # 5. Upload SARIF to GitHub Security tab (Luxembourg compliance)
       - name: Upload SARIF
         uses: github/codeql-action/upload-sarif@v3
+        if: always()
         with:
           sarif_file: trivy-results.sarif
 
