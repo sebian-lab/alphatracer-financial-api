@@ -64,20 +64,37 @@ if (-not $dockerRunning) {
     Write-Host "  [OK] Docker daemon reachable" -ForegroundColor Green
 }
 
-# Check kubectl & cluster
-Run-Step "Verifying K8s cluster connectivity" {
-    $clusterInfo = kubectl cluster-info --request-timeout='4s' 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "     [WARN] kubectl cannot reach cluster." -ForegroundColor Yellow
-        Write-Host "     -> Tip: Enable Kubernetes in Docker Desktop (Settings -> Kubernetes -> Enable Kubernetes)" -ForegroundColor Gray
-        Write-Host "     -> Or start your local K3s / Minikube / Kind instance." -ForegroundColor Gray
-        if (-not $DryRun) {
-            Write-Host "     [ERROR] Halting deployment. Please start your Kubernetes cluster first." -ForegroundColor Red
-            exit 1
-        }
-    } else {
-        Write-Host "     [OK] Cluster reachable" -ForegroundColor Green
+# Check kubectl & cluster (fast detection to avoid NativeCommandError and timeouts)
+Write-Host "  -> Verifying K8s cluster connectivity..." -ForegroundColor Gray
+$kubeConfigPath = "$env:USERPROFILE\.kube\config"
+$clusterReady = $false
+
+if (Test-Path $kubeConfigPath) {
+    try {
+        $p = Start-Process -FilePath "kubectl" -ArgumentList "cluster-info", "--request-timeout=3s" -NoNewWindow -PassThru -RedirectStandardOutput "$env:TEMP\k_out.txt" -RedirectStandardError "$env:TEMP\k_err.txt"
+        $finished = $p.WaitForExit(3000)
+        if (-not $finished) { $p.Kill() }
+        elseif ($p.ExitCode -eq 0) { $clusterReady = $true }
+    } catch {}
+}
+
+if (-not $clusterReady) {
+    Write-Host "     [ERROR] Kubernetes cluster is NOT reachable!" -ForegroundColor Red
+    Write-Host "     Reason: ~/.kube/config is missing or cluster did not respond within 3s." -ForegroundColor Yellow
+    Write-Host "     (Without an active cluster, kubectl falls back to http://localhost:8080)" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "     How to start your local Kubernetes cluster:" -ForegroundColor Cyan
+    Write-Host "       1. Docker Desktop : Open Docker Desktop -> Settings (gear icon) -> Kubernetes -> Check 'Enable Kubernetes' -> Click 'Apply & restart'" -ForegroundColor White
+    Write-Host "       2. Minikube       : Run 'winget install Kubernetes.minikube' then 'minikube start'" -ForegroundColor White
+    Write-Host "       3. K3d (Light)    : Run 'winget install k3d.k3d' then 'k3d cluster create devsecops'" -ForegroundColor White
+    Write-Host "       4. Dry-Run Check  : Run '.\scripts\setup-platform.ps1 -DryRun' to preview all manifests safely" -ForegroundColor White
+    Write-Host ""
+    if (-not $DryRun) {
+        Write-Host "     Deployment stopped safely. Start your Kubernetes engine and re-run." -ForegroundColor Red
+        exit 1
     }
+} else {
+    Write-Host "     [OK] Cluster reachable" -ForegroundColor Green
 }
 
 # Check Helm
