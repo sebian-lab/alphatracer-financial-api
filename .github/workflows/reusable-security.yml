@@ -81,7 +81,12 @@ jobs:
           name: sbom
           path: sbom.spdx.json
 
-      # 7. Push to GHCR (Pushes for dev, main, and prod so K3s can pull)
+      # 7. Install Cosign (required on GitHub-hosted runners)
+      - name: Install Cosign
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/prod'
+        uses: sigstore/cosign-installer@v3
+
+      # 8. Push to GHCR & Sign (keyless Sigstore)
       - name: Push and Sign (keyless)
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/prod'
         env:
