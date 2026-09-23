@@ -1,0 +1,34 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-image-registries
+  annotations:
+    policies.kyverno.io/title: Restrict Image Registries
+    policies.kyverno.io/category: Supply Chain Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      Only images from approved registries are allowed in AlphaTracer namespaces.
+      Approved: ghcr.io/sebian-lab/*, localhost:5000/*, and localhost:30500/*.
+      All other registries are blocked to prevent supply chain attacks.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+  - name: validate-registries
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          namespaces:
+          - alphatracer
+          - alphatracer-dev
+          - alphatracer-staging
+    validate:
+      message: >-
+        Image registry not allowed. Only ghcr.io/sebian-lab/* and localhost:5000/* are permitted.
+        Image: {{request.object.spec.containers[].image}}
+      pattern:
+        spec:
+          containers:
+          - image: "ghcr.io/sebian-lab/* | localhost:5000/* | localhost:30500/*"

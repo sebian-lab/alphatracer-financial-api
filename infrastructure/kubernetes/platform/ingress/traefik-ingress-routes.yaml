@@ -1,0 +1,83 @@
+# Traefik IngressRoute CRDs for AlphaTracer environments
+# K3s ships with Traefik by default — these routes replace raw port-forwarding
+# Prerequisites: Add entries to C:\Windows\System32\drivers\etc\hosts (see setup-hosts.ps1)
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: alphatracer-prod
+  namespace: alphatracer
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+  - match: Host(`alphatracer.local`)
+    kind: Rule
+    services:
+    - name: alphatracer-service
+      port: 8011
+  tls:
+    secretName: alphatracer-prod-tls
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: alphatracer-dev
+  namespace: alphatracer-dev
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+  - match: Host(`dev.alphatracer.local`)
+    kind: Rule
+    services:
+    - name: alphatracer-service
+      port: 8011
+  tls:
+    secretName: alphatracer-dev-tls
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: alphatracer-staging
+  namespace: alphatracer-staging
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+  - match: Host(`staging.alphatracer.local`)
+    kind: Rule
+    services:
+    - name: alphatracer-service
+      port: 8011
+  tls:
+    secretName: alphatracer-staging-tls
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: argocd-ingress
+  namespace: argocd
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+  - match: Host(`argocd.local`)
+    kind: Rule
+    services:
+    - name: argocd-server
+      port: 443
+  tls:
+    secretName: argocd-tls

@@ -1,0 +1,51 @@
+# Actions Runner Controller (ARC) — Self-Hosted GitHub Actions Runners
+# Chart: actions-runner-controller/actions-runner-controller
+# Repo: helm repo add arc https://actions-runner-controller.github.io/actions-runner-controller
+# Install: helm install arc arc/actions-runner-controller -n arc --create-namespace -f helm-values.yaml
+#
+# IMPORTANT: Requires a GitHub PAT stored in a Kubernetes secret:
+#   kubectl create secret generic github-arc-token -n arc \
+#     --from-literal=github_token=ghp_YOUR_PAT_HERE
+#
+# No UI — manage via kubectl:
+#   kubectl get runners -n arc
+#   kubectl get horizontalrunnerautoscaler -n arc
+
+authSecret:
+  create: false
+  name: github-arc-token
+
+# Resource limits for the controller
+resources:
+  requests:
+    memory: 128Mi
+    cpu: 100m
+  limits:
+    memory: 256Mi
+    cpu: 200m
+
+# Runner deployment
+runner:
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 512Mi
+      cpu: 500m
+
+# Runner scale set for AlphaTracer repo
+runnerDeployments: []
+# Uncomment and configure after creating the GitHub PAT secret:
+# - metadata:
+#     name: alphatracer-runner
+#     namespace: arc
+#   spec:
+#     replicas: 1
+#     template:
+#       spec:
+#         repository: sebian-lab/alphatracer-financial-api
+#         labels:
+#         - self-hosted
+#         - linux
+#         - k3s

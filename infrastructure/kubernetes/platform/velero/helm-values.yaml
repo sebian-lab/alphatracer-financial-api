@@ -1,0 +1,130 @@
+# Velero Backup/DR — Helm Values
+# Chart: vmware-tanzu/velero
+# Repo: helm repo add vmware-tanzu https://vmware-tanzu.github.io/helm-charts
+# Install: helm install velero vmware-tanzu/velero -n velero --create-namespace -f helm-values.yaml
+# CLI: velero backup create alphatracer-backup --include-namespaces alphatracer
+
+# Use MinIO as local S3-compatible backup target
+configuration:
+  backupStorageLocation:
+  - name: default
+    provider: aws
+    bucket: velero-backups
+    config:
+      region: minio
+      s3ForcePathStyle: "true"
+      s3Url: http://minio.velero.svc:9000
+  volumeSnapshotLocation:
+  - name: default
+    provider: aws
+    config:
+      region: minio
+
+credentials:
+  useSecret: true
+  secretContents:
+    cloud: |
+      [default]
+      aws_access_key_id = minio
+      aws_secret_access_key = minio123
+
+initContainers:
+- name: velero-plugin-for-aws
+  image: velero/velero-plugin-for-aws:v1.8.0
+  volumeMounts:
+  - mountPath: /target
+    name: plugins
+
+resources:
+  requests:
+    memory: 128Mi
+    cpu: 100m
+  limits:
+    memory: 256Mi
+    cpu: 200m
+
+# Schedules for automatic backups
+schedules:
+  alphatracer-daily:
+    disabled: false
+    schedule: "0 2 * * *"
+    template:
+      includedNamespaces:
+      - alphatracer
+      - alphatracer-dev
+      ttl: "168h"
+      storageLocation: default
+
+# Deploy MinIO alongside Velero
+deployNodeAgent: false
+
+# MinIO sub-deployment for local S3 storage
+kubectl:
+  annotations: {}
+---
+# MinIO deployment for Velero backup storage
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio
+  namespace: velero
+  labels:
+    app: minio
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      containers:
+      - name: minio
+        image: minio/minio:latest
+        args:
+        - server
+        - /data
+        - --console-address
+        - ":9001"
+        env:
+        - name: MINIO_ROOT_USER
+          value: "minio"
+        - name: MINIO_ROOT_PASSWORD
+          value: "minio123"
+        ports:
+        - containerPort: 9000
+          name: api
+        - containerPort: 9001
+          name: console
+        resources:
+          requests:
+            memory: 128Mi
+            cpu: 100m
+          limits:
+            memory: 256Mi
+            cpu: 200m
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: velero
+spec:
+  type: ClusterIP
+  ports:
+  - port: 9000
+    targetPort: 9000
+    name: api
+  - port: 9001
+    targetPort: 9001
+    name: console
+  selector:
+    app: minio

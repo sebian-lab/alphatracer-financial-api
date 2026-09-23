@@ -1,0 +1,22 @@
+# Chaos Mesh Experiment: Pod Kill
+# Tests self-healing capability of AlphaTracer dev deployment
+# ArgoCD should automatically reconcile and restore the killed pods
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: alphatracer-pod-kill
+  namespace: chaos-mesh
+  labels:
+    app: alphatracer
+    experiment: pod-kill
+spec:
+  action: pod-kill
+  mode: one
+  selector:
+    namespaces:
+    - alphatracer-dev
+    labelSelectors:
+      app: alphatracer
+  # Run once — trigger manually via Chaos Mesh dashboard
+  # To make it recurring, add a Schedule CRD

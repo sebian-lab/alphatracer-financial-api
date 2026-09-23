@@ -1,0 +1,88 @@
+# pgAdmin 4 — Deployment
+# UI: http://localhost:5050 (admin@alphatracer.local / alphatracer)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgadmin
+  namespace: alphatracer
+  labels:
+    app: pgadmin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgadmin
+  template:
+    metadata:
+      labels:
+        app: pgadmin
+    spec:
+      containers:
+      - name: pgadmin
+        image: dpage/pgadmin4:latest
+        env:
+        - name: PGADMIN_DEFAULT_EMAIL
+          value: "admin@alphatracer.local"
+        - name: PGADMIN_DEFAULT_PASSWORD
+          value: "alphatracer"
+        - name: PGADMIN_CONFIG_SERVER_MODE
+          value: "True"
+        - name: PGADMIN_LISTEN_PORT
+          value: "5050"
+        ports:
+        - containerPort: 5050
+          name: http
+        resources:
+          requests:
+            memory: 128Mi
+            cpu: 100m
+          limits:
+            memory: 256Mi
+            cpu: 200m
+        volumeMounts:
+        - name: pgadmin-config
+          mountPath: /pgadmin4/servers.json
+          subPath: servers.json
+          readOnly: true
+      volumes:
+      - name: pgadmin-config
+        configMap:
+          name: pgadmin-servers
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgadmin-servers
+  namespace: alphatracer
+data:
+  servers.json: |
+    {
+      "Servers": {
+        "1": {
+          "Name": "AlphaTracer PostgreSQL",
+          "Group": "AlphaTracer",
+          "Host": "postgresql.alphatracer.svc",
+          "Port": 5432,
+          "MaintenanceDB": "trading_db",
+          "Username": "alphatracer",
+          "SSLMode": "prefer"
+        }
+      }
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgadmin
+  namespace: alphatracer
+  labels:
+    app: pgadmin
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5050
+    targetPort: 5050
+    name: http
+  selector:
+    app: pgadmin

@@ -1,0 +1,40 @@
+# SonarQube Community Edition — Helm Values
+# Chart: sonarqube/sonarqube
+# Repo: helm repo add sonarqube https://SonarSource.github.io/helm-chart-sonarqube
+# Install: helm install sonarqube sonarqube/sonarqube -n testing --create-namespace -f sonarqube-helm-values.yaml
+# UI: http://localhost:9000 (default: admin/admin)
+
+edition: community
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 1Gi
+  limits:
+    cpu: 500m
+    memory: 2Gi
+
+# Use embedded H2 database for local dev (no external Postgres needed)
+postgresql:
+  enabled: false
+
+jdbcOverwrite:
+  enable: false
+
+# Persistence — disable for local dev (ephemeral)
+persistence:
+  enabled: false
+
+# Service configuration
+service:
+  type: ClusterIP
+  externalPort: 9000
+
+# Disable monitoring plugins to save resources
+plugins:
+  install: []
+
+# Initial admin credentials (change after first login)
+account:
+  adminPassword: "admin"
+  currentAdminPassword: "admin"

@@ -1,0 +1,37 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: verify-image-signatures
+  annotations:
+    policies.kyverno.io/title: Verify Cosign Image Signatures
+    policies.kyverno.io/category: Supply Chain Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      All container images from ghcr.io/sebian-lab must be signed with Cosign
+      keyless signing (Sigstore OIDC / Fulcio). Unsigned images are rejected
+      at admission time, closing the supply chain verification loop.
+spec:
+  validationFailureAction: Enforce
+  background: false
+  webhookTimeoutSeconds: 30
+  rules:
+  - name: verify-cosign-keyless
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          namespaces:
+          - alphatracer
+          - alphatracer-dev
+          - alphatracer-staging
+    verifyImages:
+    - imageReferences:
+      - "ghcr.io/sebian-lab/*"
+      attestors:
+      - entries:
+        - keyless:
+            issuer: "https://token.actions.githubusercontent.com"
+            subject: "https://github.com/sebian-lab/*"
+            rekor:
+              url: "https://rekor.sigstore.dev"

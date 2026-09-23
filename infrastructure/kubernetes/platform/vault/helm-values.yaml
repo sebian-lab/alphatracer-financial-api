@@ -1,0 +1,53 @@
+# HashiCorp Vault - Helm Values for Local Development
+# Chart: hashicorp/vault
+# Repo: helm repo add hashicorp https://helm.releases.hashicorp.com
+# Install: helm install vault hashicorp/vault -n vault -f helm-values.yaml
+
+server:
+  # Dev mode: auto-unsealed, in-memory storage, root token = "root"
+  dev:
+    enabled: true
+    devRootToken: "root"
+
+  # Resource limits for local K3s
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 100m
+    limits:
+      memory: 256Mi
+      cpu: 250m
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 8200
+
+  # Readiness probe
+  readinessProbe:
+    enabled: true
+    path: "/v1/sys/health?standbyok=true"
+
+  # Standalone mode for local dev
+  standalone:
+    enabled: true
+
+  # Disable HA for local dev
+  ha:
+    enabled: false
+
+ui:
+  # Enable Vault Web UI at http://localhost:8200/ui
+  enabled: true
+  serviceType: ClusterIP
+
+injector:
+  # Enable sidecar injector for automatic secret injection into pods
+  enabled: true
+  resources:
+    requests:
+      memory: 64Mi
+      cpu: 50m
+    limits:
+      memory: 128Mi
+      cpu: 100m

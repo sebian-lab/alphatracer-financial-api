@@ -1,0 +1,26 @@
+# Chaos Mesh Experiment: Network Delay
+# Simulates 100ms network latency on AlphaTracer service
+# Useful for testing timeout handling and circuit breakers
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: alphatracer-network-delay
+  namespace: chaos-mesh
+  labels:
+    app: alphatracer
+    experiment: network-delay
+spec:
+  action: delay
+  mode: all
+  selector:
+    namespaces:
+    - alphatracer-dev
+    labelSelectors:
+      app: alphatracer
+  delay:
+    latency: "100ms"
+    correlation: "50"
+    jitter: "20ms"
+  duration: "5m"
+  direction: to

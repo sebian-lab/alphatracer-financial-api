@@ -1,89 +1,150 @@
-# Alphatracer — Setup & Deployment Guide
+# 🚀 AlphaTracer — DevSecOps Setup & Deployment Guide
 
-## Prerequisites
-
-```bash
-python3 --version   # 3.10+ required
-pip3 --version
-curl --version
-```
-
-No database server needed — Alphatracer uses **SQLite** (single file, created automatically).
+Welcome! This setup guide walks through configuring and running AlphaTracer with modern **DevSecOps standards**, the **3-branch workflow (`dev`, `main`, `prod`)**, **Kyverno Policy-as-Code**, and **Kubernetes Secret management** (with zero cleartext `.env` files).
 
 ---
 
-## Installation
+## 📋 Prerequisites
 
-```bash
-# 1. Install Python dependencies
-pip install -r requirements.txt
+- **Python 3.10+** & `pip`
+- **Docker** / **Containerd**
+- **Git** & **GitHub CLI (`gh`)**
+- **Kubernetes CLI (`kubectl`)** (for K3s / Minikube cluster administration)
 
-# 2. Copy the example environment file and configure variables
-cp .env.example .env
+---
 
-# 3. Start the server
+## 🔒 1. DevSecOps Secret Practice: Zero Cleartext `.env` Files
+
+> ⚠️ **Security Standard**: In accordance with CIS benchmarks and production DevSecOps best practices, **never create, commit, or store unencrypted `.env` files on disk**.
+
+Instead, secrets and configuration are handled through secure, isolated channels:
+
+### A. Local Development (In-Process Shell Environment)
+Configure variables directly in your active terminal session without touching disk:
+
+**In PowerShell (Windows):**
+```powershell
+$env:DATABASE_URL = "sqlite:///./trading.db"
+$env:SECRET_KEY = [System.Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }))
+$env:ALGORITHM = "HS256"
+$env:ACCESS_TOKEN_EXPIRE_MINUTES = "60"
+
+# Start the service
 uvicorn app.main:app --host 0.0.0.0 --port 8011 --reload
 ```
 
-On first start:
-- `trading.db` (SQLite file) is created automatically
-- All tables are created via `create_tables()` in the app lifespan
-- Both ticker CSV sources are downloaded and loaded into `stocks` table
-- ~13 000 tickers are available for search immediately
-
----
-
-## Environment Reference
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `DATABASE_URL` | `sqlite:///./trading.db` | SQLite file path (relative to working dir) |
-| `SECRET_KEY` | *(set in .env)* | JWT signing key — **change before production** |
-| `ALGORITHM` | `HS256` | JWT algorithm |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | `60` | Access token TTL |
-| `REFRESH_TOKEN_EXPIRE_DAYS` | `7` | Refresh token TTL |
-| `PRIMARY_TICKER_CSV` | GitHub abbadata URL | Primary ticker list (~7 600 tickers) |
-| `SECONDARY_TICKER_CSV` | GitHub Ate329 URL | Secondary ticker list (~5 300 tickers) |
-| `TICKER_UPDATE_INTERVAL_HOURS` | `12` | CSV re-download interval |
-
----
-
-## Running Tests
-
+**In Bash (Linux / macOS):**
 ```bash
-# Full endpoint test suite (requires server running on localhost:8011)
-bash tests/test_all_endpoints.sh
+export DATABASE_URL="sqlite:///./trading.db"
+export SECRET_KEY=$(openssl rand -base64 32)
+export ALGORITHM="HS256"
+export ACCESS_TOKEN_EXPIRE_MINUTES="60"
 
-# End-to-end demo
-bash demo.sh
+# Start the service
+uvicorn app.main:app --host 0.0.0.0 --port 8011 --reload
+```
+
+### B. Kubernetes / K3s Secrets (Production & Development Namespaces)
+Run the automated script to provision runtime secrets securely:
+```powershell
+.\scripts\create-k3s-secrets.ps1
+```
+Or manually create them via `kubectl`:
+```bash
+# Production namespace
+kubectl create namespace alphatracer --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n alphatracer create secret generic alphatracer-secrets \
+  --from-literal=database-url="postgresql://postgres:postgres_secure_pass@db:5432/trading_db" \
+  --from-literal=secret-key="$(openssl rand -base64 32)" \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+# Development namespace
+kubectl create namespace alphatracer-dev --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n alphatracer-dev create secret generic alphatracer-secrets \
+  --from-literal=database-url="postgresql://postgres:postgres_secure_pass@db:5432/trading_db" \
+  --from-literal=secret-key="$(openssl rand -base64 32)" \
+  --dry-run=client -o yaml | kubectl apply -f -
 ```
 
 ---
 
-## Deploying on a Remote Host
+## 🛡️ 2. Kyverno Policy-as-Code Enforcement
 
+Kyverno admission controller guards against container privilege escalation and root execution across both `alphatracer` and `alphatracer-dev` namespaces.
+
+### Deploy the Kyverno Policy:
 ```bash
-# On the remote machine, change the BASE URL in demo/test scripts:
-bash demo.sh --base http://YOUR_IP:8011/api/v1
-
-# Or export before running:
-export BASE=http://YOUR_IP:8011/api/v1
-bash tests/test_all_endpoints.sh --base $BASE
+kubectl apply -f policies/kyverno/disallow-root.yaml
 ```
 
-The SQLite file (`trading.db`) lives in the working directory. Back it up with:
+### Verify the Policy:
 ```bash
-cp trading.db trading.db.bak
+kubectl get clusterpolicy
+```
+```text
+NAME                         BACKGROUND   VALIDATE ACTION   READY
+disallow-privileged-and-root true         Enforce           true
+```
+
+### Test Admission Control (Simulate an Unauthorized Root Pod):
+```bash
+kubectl run evil-root-pod --image=busybox --restart=Never -n alphatracer --command -- sleep 3600
+```
+**Expected Response:**
+```text
+Error from server: admission webhook "validate.kyverno.svc" denied the request:
+Security Policy Violation: Running as root (UID 0) is forbidden in AlphaTracer workloads.
 ```
 
 ---
 
-## Production Checklist
+## 🌿 3. 3-Branch Git Workflow (`dev` ➔ `main` ➔ `prod`)
 
-- [ ] Change `SECRET_KEY` in `.env` to a random 32+ byte value:
-  ```bash
-  python3 -c "import secrets; print(secrets.token_urlsafe(32))"
-  ```
-- [ ] Set `ACCESS_TOKEN_EXPIRE_MINUTES` to a shorter window (e.g. `15`)
-- [ ] Run behind a reverse proxy (nginx / caddy) with HTTPS
-- [ ] For high traffic, consider switching `DATABASE_URL` to PostgreSQL
+| Branch | Stage | Gating & Promotion | K3s Namespace |
+| :--- | :--- | :--- | :--- |
+| **`dev`** | Rapid Integration & Testing | Push triggers unit tests, Bandit SAST, CVE scan, and dev overlay update | `alphatracer-dev` |
+| **`main`** | Release Candidate / Staging | PR review required; SBOM generation and staging dry-run | `alphatracer` (staging) |
+| **`prod`** | Production Release | **🛑 Manual Approval Only** via GitHub Environment `production`, Cosign Keyless Image Signing | `alphatracer` (prod) |
+
+### Branch Switching & Pull Requests:
+```bash
+# 1. Everyday development on dev branch
+git checkout dev
+
+# 2. Run local shift-left check before opening PR
+.\dev-check.ps1
+
+# 3. Create PR to promote into staging/main
+gh pr create --base main --head dev --title "feat: new market data endpoints"
+
+# 4. Production Release PR (Protected by manual sign-off)
+gh pr create --base prod --head main --title "release: production deployment v1.0"
+```
+
+---
+
+## 🧪 4. Local K3s Auto-Pull Mockup Script
+
+Test the entire DevSecOps lifecycle locally without any external cloud costs:
+
+```powershell
+# Windows PowerShell
+.\scripts\mock-k3s-autopull.ps1 -TargetBranch dev
+```
+```bash
+# Linux / macOS Bash
+bash ./scripts/mock-k3s-autopull.sh dev
+```
+
+---
+
+## 🔬 5. Running Automated Tests
+
+Tests execute in-process with ephemeral credentials (zero disk secrets):
+```bash
+python -m pytest -q
+```
+Expected output:
+```text
+3 passed in ~3s
+```

@@ -1,0 +1,40 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-resource-limits
+  annotations:
+    policies.kyverno.io/title: Require Resource Limits
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      All containers in AlphaTracer namespaces must define CPU and memory
+      resource limits. This prevents resource exhaustion and enables accurate
+      cost allocation via OpenCost.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+  - name: check-resource-limits
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          namespaces:
+          - alphatracer
+          - alphatracer-dev
+          - alphatracer-staging
+    validate:
+      message: >-
+        Resource limits are required. Set spec.containers[].resources.limits.cpu
+        and spec.containers[].resources.limits.memory for all containers.
+      pattern:
+        spec:
+          containers:
+          - resources:
+              limits:
+                memory: "?*"
+                cpu: "?*"
+              requests:
+                memory: "?*"
+                cpu: "?*"

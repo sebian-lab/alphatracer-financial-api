@@ -81,9 +81,9 @@ jobs:
           name: sbom
           path: sbom.spdx.json
 
-      # 7. Push to GHCR (Pushes for both dev and main so K3s can pull)
+      # 7. Push to GHCR (Pushes for dev, main, and prod so K3s can pull)
       - name: Push and Sign (keyless)
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/prod'
         env:
           COSIGN_EXPERIMENTAL: true
         run: |
@@ -91,6 +91,7 @@ jobs:
           docker load -i /tmp/alphatracer.tar
           docker tag alphatracer:${{ inputs.image-tag }} ghcr.io/${{ github.repository }}:${{ inputs.image-tag }}
           docker push ghcr.io/${{ github.repository }}:${{ inputs.image-tag }}
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+          if [ "${{ github.ref }}" = "refs/heads/main" ] || [ "${{ github.ref }}" = "refs/heads/prod" ]; then
             cosign sign -y ghcr.io/${{ github.repository }}:${{ inputs.image-tag }}
           fi
+

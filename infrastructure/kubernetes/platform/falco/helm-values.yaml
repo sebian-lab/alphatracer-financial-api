@@ -1,0 +1,67 @@
+# Falco Runtime Security — Helm Values
+# Chart: falcosecurity/falco
+# Repo: helm repo add falcosecurity https://falcosecurity.github.io/charts
+# Install: helm install falco falcosecurity/falco -n falco --create-namespace -f helm-values.yaml
+# UI: http://localhost:2801
+
+# Use eBPF driver (works in K3s/WSL2 without kernel modules)
+driver:
+  kind: ebpf
+
+# Resource limits for local K3s
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Falcosidekick — event forwarder with web UI
+falcosidekick:
+  enabled: true
+  # Forward events to Loki for centralized logging
+  config:
+    loki:
+      hostport: "http://loki.monitoring.svc:3100"
+  webui:
+    enabled: true
+    service:
+      type: ClusterIP
+      port: 2801
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+
+# Custom rules for AlphaTracer workloads
+customRules:
+  alphatracer-rules.yaml: |-
+    - rule: Shell Spawned in AlphaTracer Container
+      desc: Detect interactive shell in alphatracer pods (potential compromise)
+      condition: >
+        spawned_process and
+        container and
+        container.image.repository contains "alphatracer" and
+        proc.name in (bash, sh, dash, zsh)
+      output: >
+        Shell spawned in AlphaTracer container
+        (user=%user.name pod=%k8s.pod.name ns=%k8s.ns.name command=%proc.cmdline)
+      priority: WARNING
+      tags: [container, shell, alphatracer]
+
+    - rule: Sensitive File Read in AlphaTracer
+      desc: Detect reads of /etc/shadow or /etc/passwd in alphatracer containers
+      condition: >
+        open_read and
+        container and
+        container.image.repository contains "alphatracer" and
+        (fd.name = /etc/shadow or fd.name = /etc/passwd)
+      output: >
+        Sensitive file read in AlphaTracer
+        (user=%user.name file=%fd.name pod=%k8s.pod.name ns=%k8s.ns.name)
+      priority: CRITICAL
+      tags: [container, filesystem, alphatracer]
