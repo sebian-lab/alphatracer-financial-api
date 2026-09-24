@@ -26,35 +26,31 @@ This repository demonstrates practical implementation of production software del
 
 ## 🌿 3-Branch Strategy & DevSecOps Flow
 
-```
-[ Developer Machine ]
-        │
-        ├─► Pre-Commit Hook (Gitleaks + Ruff/Bandit) 🛑 Block secrets in 2s
-        │
-   git push origin dev
-        ▼
-[ 🧪 Branch: 'dev' ]
-        ├─► Pytest Unit Tests & Bandit SAST
-        ├─► Container Build & Trivy CVE Scan (Export SARIF)
-        ├─► Push Dev Image to GHCR (ghcr.io/...:sha)
-        └─► Update Kustomize Overlay: overlays/dev (ArgoCD auto-pulls to alphatracer-dev)
-        │
-   Pull Request / Staging Review (gh pr create --base main --head dev)
-        ▼
-[ 🚀 Branch: 'main' ]  (Release Candidate & Staging)
-        ├─► Full Integration Test Suite + Dependency Audit
-        ├─► Syft SBOM Generation & GHCR Push
-        └─► Pre-production validation on K3s Staging namespace
-        │
-   Tagged Release / Production Promotion (gh pr create --base prod --head main)
-        ▼
-   🛑 MANUAL APPROVAL REQUIRED (GitHub Environment: 'production' Reviewer Sign-off)
-        ▼
-[ 🛡️ Branch: 'prod' ]  (Production Release — Manual Approval Gated)
-        ├─► Strict Regression & Security Verification
-        ├─► Push & Keyless Cryptographic Signing with Cosign (Sigstore / OIDC)
-        ├─► Update Kustomize Overlay: overlays/prod (Runs ONLY after manual approval)
-        └─► ArgoCD auto-pulls & rolls out to namespace 'alphatracer' with Zero-Downtime!
+```mermaid
+flowchart TD
+    subgraph DevMachine["💻 Developer Workstation (Shift-Left)"]
+        Code["Developer Code Changes"] --> PreCommit{"Pre-Commit Hooks (<2s)<br/>• Gitleaks (Secret Detection)<br/>• Bandit & Ruff (Python AST SAST)"}
+        PreCommit -->|Pass: Zero Secrets| PushDev["git push origin dev"]
+    end
+
+    subgraph BranchDev["🧪 Branch: 'dev' (Development & Fast Iteration)"]
+        PushDev --> PipelineDev["Full CI/CD Pipeline<br/>• Pytest Unit & Financial Ledger Tests<br/>• Bandit Security Scan<br/>• Trivy Container CVE Scan (Export SARIF)<br/>• Push Dev Image to GHCR"]
+        PipelineDev --> AutoDevOverlay["Update overlays/dev/kustomization.yaml<br/>(Automated bot commit [skip ci])"]
+        AutoDevOverlay --> ArgoDev["ArgoCD Auto-Sync & Rolling Update<br/>Target Namespace: alphatracer-dev"]
+    end
+
+    subgraph BranchMain["🚀 Branch: 'main' (Staging & Release Candidate)"]
+        ArgoDev -.->|Open Pull Request| PRReview{"PR Code Review & Ruleset 19710100<br/>• Strict CI Gating Required<br/>• Linear Git History Enforced"}
+        PRReview -->|Merge PR| PipelineMain["Staging Verification Pipeline<br/>• Integration Test Suite<br/>• Syft SBOM Generation (SPDX format)<br/>• Push Staging Image to GHCR"]
+        PipelineMain --> ArgoStaging["ArgoCD Auto-Sync & Pre-Prod Validation"]
+    end
+
+    subgraph BranchProd["🛡️ Branch: 'prod' (Production Release — Gated)"]
+        ArgoStaging -.->|Release Promotion PR| Gate{"🛑 MANUAL APPROVAL REQUIRED<br/>GitHub Environment: 'production'<br/>Lead Reviewer Sign-Off"}
+        Gate -->|Approved & Signed Off| PipelineProd["Production Sign & Deploy<br/>• Sigstore Cosign Keyless OIDC Signing<br/>• Rekor Transparency Log Recording<br/>• Update overlays/prod/kustomization.yaml"]
+        PipelineProd --> KyvernoVal{"Kyverno Admission Webhook<br/>• Verify Cryptographic Cosign Signature<br/>• Disallow Root Execution (UID 0)<br/>• Enforce CPU/Memory Limits"}
+        KyvernoVal -->|Valid| ArgoProd["ArgoCD Auto-Pull & Zero-Downtime Rollout<br/>Target Namespace: alphatracer"]
+    end
 ```
 
 | Branch | Environment | Overlay Path | GitOps Sync Mechanism | Image Signing | Deployment Gate |
@@ -298,6 +294,75 @@ Official, lightweight, high-value DevSecOps & Observability tools running smooth
 | **Trivy Vulnerability Server** | [`http://localhost:4954`](http://localhost:4954) | Container & Dependency Security CVE Scanner | 🟢 Active |
 | **K3s Kubernetes Cluster** | [`https://localhost:6443`](https://localhost:6443) | Lightweight On-Premise Kubernetes Control Plane | 🟢 Active |
 | **AlphaTracer API (FastAPI)** | [`http://localhost:8011/docs`](http://localhost:8011/docs) | Financial market data backend (Swagger UI & `/health`) | 🟢 Active |
+
+### 📋 Live Platform Execution Log (Demonstration for Technical Interviews)
+Run the automated live probe script anytime to verify all 10 services and K3s cluster health:
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\probe-observability.ps1
+```
+```text
+=================================================================================
+ [PROBE] ALPHATRACER DEVSECOPS & OBSERVABILITY LIVE PLATFORM STATUS
+ Running on Local Workstation / Homelab Architecture
+ Timestamp: 2026-09-24 15:13:41 +02:00
+=================================================================================
+
+ [ONLINE] AlphaTracer API (FastAPI)    HTTP 200 (76.1ms) -> Core Financial Portfolio & Market Engine (REST API)
+ [ONLINE] FastAPI Swagger Docs         HTTP 200 (2.7ms)  -> OpenAPI 3.1 Interactive Contract & Endpoint Explorer
+ [ONLINE] Prometheus Metrics Exporter  HTTP 200 (3.8ms)  -> Dynamic Prometheus Text Exposition (/metrics)
+ [ONLINE] Prometheus Time-Series DB    HTTP 200 (5.4ms)  -> Time-Series Telemetry Scraper & PromQL Target Status
+ [ONLINE] Grafana Dashboards           HTTP 200 (5.6ms)  -> Unified Golden Signals, LogQL & Tracing Visualizer
+ [ONLINE] Alertmanager                 HTTP 200 (5.8ms)  -> Alert Routing Engine, Silences & Grouping Webhooks
+ [ONLINE] Jaeger Distributed Tracing   HTTP 200 (7.4ms)  -> OTLP Request Span Waterfall & Latency Bottleneck Analysis
+ [ONLINE] Loki Container Log Engine    HTTP 200 (8.1ms)  -> High-Efficiency Index-Free Container Log Aggregator
+ [ONLINE] HashiCorp Vault              HTTP 200 (5.3ms)  -> Dynamic Secret Storage, Leasing & Central Identity Engine
+ [ONLINE] Local Docker OCI Registry    HTTP 200 (12.8ms) -> Local Container Push/Pull Distribution Cache (:5000)
+ [ONLINE] Trivy Vulnerability Server   HTTP 200 (5.9ms)  -> Container Image & Filesystem CVE Scanner Daemon (:4954)
+
+---------------------------------------------------------------------------------
+ [KUBERNETES] CONTROL PLANE & WORKLOAD VERIFICATION (K3s Cluster)
+---------------------------------------------------------------------------------
+ [ONLINE] K3s Node Status        : Active & Ready (containerd://1.7.20-k3s1)
+ [ONLINE] Cluster Workloads      : 29 Pods running across alphatracer-dev, alphatracer-prod, argocd, kyverno
+
+=================================================================================
+ [SUMMARY] PLATFORM HEALTH: 11 / 11 Services Healthy + K3s Cluster Active
+ All DevSecOps, Observability, and Orchestration components verified operational!
+=================================================================================
+```
+
+### 📸 Visual Evidence Gallery: Running Services on Workstation
+
+#### 1. AlphaTracer Financial API (FastAPI Swagger Contract UI)
+![FastAPI Swagger UI](docs/screenshots/01_fastapi_swagger.png)
+
+#### 2. Grafana Unified Telemetry & Golden Signals Dashboards
+![Grafana UI](docs/screenshots/02_grafana_ui.png)
+
+#### 3. Prometheus PromQL Metrics Engine & Target Health (1/1 UP)
+![Prometheus PromQL Graph](docs/screenshots/03_prometheus_graph.png)
+![Prometheus Active Scrape Targets](docs/screenshots/03_prometheus_targets.png)
+
+#### 4. Alertmanager (Notification Routing & Firing Alerts)
+![Alertmanager UI](docs/screenshots/04_alertmanager_ui.png)
+
+#### 5. Jaeger Distributed Tracing (OTLP Waterfall Spans & DB Latency)
+![Jaeger Tracing UI](docs/screenshots/05_jaeger_tracing.png)
+
+#### 6. HashiCorp Vault (Dynamic Secrets & Central Identity)
+![HashiCorp Vault UI](docs/screenshots/06_vault_ui.png)
+
+#### 7. Local Container Registry v2 (Image Catalog API)
+![Local Docker Registry](docs/screenshots/07_local_registry.png)
+
+#### 8. Trivy Vulnerability Security Server (CVE Scan Service)
+![Trivy Server](docs/screenshots/08_trivy_server.png)
+
+#### 9. Loki Centralized Log Aggregator Engine
+![Loki Ready Probe](docs/screenshots/09_loki_ready.png)
+
+#### 10. K3s Kubernetes Cluster (Control Plane, Ingress & Workload Pods)
+![K3s Cluster Pods and Nodes](docs/screenshots/10_k3s_cluster.png)
 
 ### ⚡ Quick Start: Manage Stack with Docker Compose
 ```bash

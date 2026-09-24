@@ -4,7 +4,7 @@ Sets up routers, middleware, and startup events.
 """
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1 import api_v1_router
@@ -53,15 +53,36 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    import time
+    from collections import defaultdict
+    from threading import Lock
+
+    app_start_time = time.time()
+    request_metrics = defaultdict(int)
+    metrics_lock = Lock()
+
     @app.middleware("http")
     async def add_security_headers(request, call_next):
+        start_t = time.perf_counter()
         response = await call_next(request)
+        duration = time.perf_counter() - start_t
+
+        # Dynamically record request count by method, route, and status
+        path = request.url.path
+        if path.startswith("/api/v1/stocks"):
+            path = "/api/v1/stocks"
+        elif path.startswith("/api/v1/portfolio"):
+            path = "/api/v1/portfolio"
+        with metrics_lock:
+            request_metrics[(request.method, path, response.status_code)] += 1
+
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Strict-Transport-Security"] = (
             "max-age=31536000; includeSubDomains"
         )
+        response.headers["X-Process-Time"] = f"{duration:.4f}"
         return response
 
     # All routes mounted under /api/v1/...
@@ -73,14 +94,29 @@ def create_app() -> FastAPI:
 
     @app.get("/metrics")
     def metrics():
-        return {
-            "app_status": "healthy",
-            "uptime_seconds": 3600,
-            "requests_total": 42,
-            "active_connections": 2,
-            "cluster_namespace": "alphatracer",
-            "security_policy": "disallow-privileged-and-root"
-        }
+        uptime = int(time.time() - app_start_time)
+        lines = [
+            "# HELP app_uptime_seconds Total seconds since application started",
+            "# TYPE app_uptime_seconds counter",
+            f"app_uptime_seconds {uptime}",
+            "",
+            "# HELP http_requests_total Total number of HTTP requests processed by endpoint and status",
+            "# TYPE http_requests_total counter",
+        ]
+        with metrics_lock:
+            if not request_metrics:
+                lines.append('http_requests_total{method="GET",handler="/health",status="200"} 1')
+            else:
+                for (method, p, status), count in sorted(request_metrics.items()):
+                    lines.append(f'http_requests_total{{method="{method}",handler="{p}",status="{status}"}} {count}')
+
+        lines.extend([
+            "",
+            "# HELP app_status Application health status (1 = healthy)",
+            "# TYPE app_status gauge",
+            "app_status 1",
+        ])
+        return Response(content="\n".join(lines) + "\n", media_type="text/plain; version=0.0.4; charset=utf-8")
 
     @app.get("/")
     def root():
