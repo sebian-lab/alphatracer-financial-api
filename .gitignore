@@ -3,11 +3,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Environments
+# Environments & Testing
 .venv/
 venv/
 ENV/
 env/
+.pytest_cache/
 
 # Configuration and Secrets
 .env
@@ -41,6 +42,11 @@ server.log
 # IDEs
 .vscode/
 .idea/
+
+# Personal Interview Prep & Notes
+INTERVIEW_PREP_DRILLDOWN.md
+*interview*.md
+.curlrc
 
 # OS generated files
 .DS_Store

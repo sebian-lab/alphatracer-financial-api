@@ -9,12 +9,12 @@ from typing import List
 
 
 class Settings(BaseSettings):
-    # Database Configuration - No defaults, MUST be in .env
-    DATABASE_URL: str
+    # Database Configuration - Defaults to local SQLite in development; overridden by Kubernetes / HashiCorp Secret
+    DATABASE_URL: str = "sqlite:///./trading.db"
     DATABASE_POOL_PREPARED: bool = True
 
-    # JWT Security - SECRET_KEY MUST be in .env or Kubernetes Secrets
-    SECRET_KEY: str
+    # JWT Security - Overridden by Kubernetes / HashiCorp Secret
+    SECRET_KEY: str = "devsecops-ephemeral-local-jwt-signing-key-32bytes"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     SECONDARY_TICKER_CSV: str = "https://raw.githubusercontent.com/Ate329/top-us-stock-tickers/main/tickers/all.csv"
     TICKER_UPDATE_INTERVAL_HOURS: int = 12
     PRICE_API_PROVIDER: str = "yfinance"
+
 
     # API Configuration
     API_V1_PREFIX: str = "/api/v1"

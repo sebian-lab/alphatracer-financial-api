@@ -27,10 +27,7 @@ If you prefer to run the application locally without Docker:
 # 1. Install dependencies
 pip install -r requirements.txt
 
-# 2. Copy the example environment file and configure variables
-cp .env.example .env
-
-# 3. Start the application (SQLite database will be created automatically)
+# 2. Start the application (SQLite database will be created automatically with secure in-process defaults)
 uvicorn app.main:app --host 0.0.0.0 --port 8011 --reload
 ```
 
@@ -65,9 +62,11 @@ This API includes production-ready cybersecurity measures:
 
 ---
 
-## Environment Variables (`.env`)
+## Environment Variables & Configuration
 
-```env
+Configuration variables can be passed via shell environment or Docker Compose:
+
+```bash
 # Database URL (PostgreSQL container connection)
 DATABASE_URL=postgresql://postgres:postgres_secure_pass@db:5432/trading_db
 

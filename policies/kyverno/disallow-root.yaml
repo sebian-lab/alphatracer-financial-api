@@ -1,19 +1,48 @@
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
-  name: disallow-root
+  name: disallow-privileged-and-root
+  annotations:
+    policies.kyverno.io/title: Disallow Root and Privileged Containers
+    policies.kyverno.io/category: Pod Security Standards (Restricted)
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      Containers must run as non-root user (UID != 0) and cannot run in privileged mode.
 spec:
-  validationFailureAction: enforce
+  validationFailureAction: Enforce
+  background: true
   rules:
-  - name: check-root-user
+  - name: check-non-root-user
     match:
-      resources:
-        kinds:
-        - Pod
+      any:
+      - resources:
+          kinds:
+          - Pod
+          namespaces:
+          - alphatracer
+          - alphatracer-dev
+          - alphatracer-staging
     validate:
-      message: "Running as root is not allowed"
+      message: "Security Policy Violation: Running as root (UID 0) is forbidden in AlphaTracer workloads."
       pattern:
         spec:
           containers:
           - securityContext:
               runAsNonRoot: true
+  - name: check-disallow-privileged
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          namespaces:
+          - alphatracer
+          - alphatracer-dev
+          - alphatracer-staging
+    validate:
+      message: "Security Policy Violation: Privileged containers are strictly prohibited."
+      pattern:
+        spec:
+          containers:
+          - =(securityContext):
+              =(privileged): "false"
