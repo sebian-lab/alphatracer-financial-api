@@ -1,6 +1,6 @@
 # ==============================================================================
 # AlphaTracer DevSecOps Mockup: Pre-Commit -> CI/CD -> K3s Auto-Pull Simulation
-# Author: Sebian (DevSecOps Student & Engineering Intern Candidate)
+# Engineering Internship Portfolio Showcase
 # ==============================================================================
 
 param (

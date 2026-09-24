@@ -4,7 +4,7 @@ Pydantic schemas for portfolio and transaction models.
 
 from datetime import date
 from typing import List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator, computed_field
 from enum import Enum
 
 
@@ -24,6 +24,16 @@ class TransactionCreate(BaseModel):
     price_per_share: float = Field(..., gt=0, description="Price per share")
     transaction_date: Optional[date] = Field(None, description="Defaults to today")
 
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_fields(cls, values):
+        if isinstance(values, dict):
+            if "transaction_type" in values and "type" not in values:
+                values["type"] = str(values["transaction_type"]).lower()
+            elif "type" in values:
+                values["type"] = str(values["type"]).lower()
+        return values
+
 
 class TransactionResponse(BaseModel):
     """Full transaction record returned to the client."""
@@ -38,6 +48,11 @@ class TransactionResponse(BaseModel):
     transaction_date: date
 
     model_config = {"from_attributes": True}
+
+    @computed_field
+    @property
+    def transaction_id(self) -> int:
+        return self.id
 
 
 class StockHolding(BaseModel):

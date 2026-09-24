@@ -70,11 +70,16 @@ foreach ($p in $policies) {
 Write-Host "`n[STAGE 5/5] Live Endpoints & Observability" -ForegroundColor Magenta
 
 $endpoints = @(
-    @{ Name = "AlphaTracer API (FastAPI)"; Port = 8011; Url = "http://localhost:8011/docs" },
-    @{ Name = "Trivy Vulnerability Server"; Port = 4954; Url = "http://localhost:4954" },
-    @{ Name = "HashiCorp Vault";          Port = 8200; Url = "http://localhost:8200" },
-    @{ Name = "Prometheus Metrics";       Port = 9090; Url = "http://localhost:9090" },
-    @{ Name = "K3s Cluster API";          Port = 6443; Url = "https://localhost:6443" }
+    @{ Name = "AlphaTracer API (FastAPI)";     Port = 8011;  Url = "http://localhost:8011/docs" },
+    @{ Name = "Local Docker Registry";        Port = 5000;  Url = "http://localhost:5000/v2/" },
+    @{ Name = "HashiCorp Vault";              Port = 8200;  Url = "http://localhost:8200" },
+    @{ Name = "Prometheus Metrics";           Port = 9090;  Url = "http://localhost:9090" },
+    @{ Name = "Grafana Dashboards";           Port = 3000;  Url = "http://localhost:3000" },
+    @{ Name = "Alertmanager";                 Port = 9093;  Url = "http://localhost:9093" },
+    @{ Name = "Jaeger Tracing";               Port = 16686; Url = "http://localhost:16686" },
+    @{ Name = "Loki Log Aggregator";          Port = 3100;  Url = "http://localhost:3100/ready" },
+    @{ Name = "Trivy Vulnerability Server";   Port = 4954;  Url = "http://localhost:4954" },
+    @{ Name = "K3s Cluster API";              Port = 6443;  Url = "https://localhost:6443" }
 )
 
 foreach ($ep in $endpoints) {

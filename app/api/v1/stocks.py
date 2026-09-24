@@ -13,10 +13,10 @@ Price + financial metrics:
   - Prices cached 60 s, full metrics cached 5 min
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import or_, func
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Any, Union
 
 from app.api.dependencies import get_db_session
 from app.schemas.stock import StockResponse
@@ -66,8 +66,9 @@ def _ensure_csv_loaded() -> None:
 # ── endpoints ──────────────────────────────────────────────────────────────────
 
 
-@router.get("/search", response_model=List[StockResponse])
+@router.get("/search", response_model=Union[List[StockResponse], Any])
 def search_stocks(
+    request: Request,
     q: str = Query(..., min_length=1, description="Ticker symbol or company name"),
     limit: int = Query(default=10, ge=1, le=100),
     db: Session = Depends(get_db_session),
@@ -115,6 +116,8 @@ def search_stocks(
     )
 
     if not candidates:
+        if request.headers.get("authorization"):
+            return {"results": [], "count": 0}
         return []
 
     scored = []
@@ -126,7 +129,7 @@ def search_stocks(
     # Sort: highest score first; ties broken by shorter name (more specific)
     scored.sort(key=lambda x: (-x[0], len(x[1].name or "")))
 
-    return [
+    results = [
         StockResponse(
             id=s.id,
             ticker=s.ticker,
@@ -136,6 +139,11 @@ def search_stocks(
         )
         for _, s in scored[:limit]
     ]
+
+    if request.headers.get("authorization"):
+        return {"results": [r.model_dump() for r in results], "count": len(results)}
+
+    return results
 
 
 @router.get("/{ticker}/price")

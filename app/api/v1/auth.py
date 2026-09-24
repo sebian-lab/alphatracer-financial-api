@@ -8,9 +8,10 @@ Two login styles are supported:
                               Used by curl/fetch with Content-Type: application/json.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from typing import Optional
 
 from app.api.dependencies import get_current_user, get_db_session
 from app.schemas.user import UserCreate, UserResponse, Token, LoginRequest
@@ -84,34 +85,55 @@ def register(
     return user
 
 
-# ── login: OAuth2 form (Swagger UI compatible) ────────────────────────────────
+# ── login: OAuth2 form / query / JSON ─────────────────────────────────────────
 
 
 @router.post(
     "/login",
     response_model=Token,
-    summary="Login (OAuth2 form — use for Swagger Authorize)",
+    summary="Login (OAuth2 form or query parameters)",
     dependencies=[Depends(rate_limit_login)],
 )
-def login_form(
-    form_data: OAuth2PasswordRequestForm = Depends(),
+async def login_form(
+    request: Request,
+    email: Optional[str] = Query(None),
+    username: Optional[str] = Query(None),
+    password: Optional[str] = Query(None),
     db: Session = Depends(get_db_session),
 ):
     """
-    Login with **form data** (`application/x-www-form-urlencoded`).
+    Login with **form data** (`application/x-www-form-urlencoded`), **query parameters**, or **JSON**.
 
-    - `username` field = your email address
-    - `password` field = your password
-
-    This is the standard OAuth2 format used by Swagger UI's **Authorize** button.
-
-    ```bash
-    curl -X POST http://localhost:8011/api/v1/auth/login \\
-      -F "username=alice@example.com" \\
-      -F "password=secret123"
-    ```
+    - `username` or `email` field
+    - `password` field
     """
-    user = _authenticate_user(form_data.username, form_data.password, db)
+    user_id = email or username
+    user_pwd = password
+
+    if not (user_id and user_pwd):
+        content_type = request.headers.get("content-type", "")
+        if "application/x-www-form-urlencoded" in content_type or "multipart/form-data" in content_type:
+            try:
+                form = await request.form()
+                user_id = user_id or form.get("username") or form.get("email")
+                user_pwd = user_pwd or form.get("password")
+            except Exception:
+                pass
+        elif "application/json" in content_type:
+            try:
+                body = await request.json()
+                user_id = user_id or body.get("email") or body.get("username")
+                user_pwd = user_pwd or body.get("password")
+            except Exception:
+                pass
+
+    if not user_id or not user_pwd:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing username/email or password",
+        )
+
+    user = _authenticate_user(user_id, user_pwd, db)
     return _make_token_response(user)
 
 

@@ -1,8 +1,17 @@
 global:
   scrape_interval: 15s
 
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alphatracer-alertmanager:9093', 'localhost:9093']
+
 scrape_configs:
   - job_name: 'alphatracer-api'
     metrics_path: '/metrics'
     static_configs:
       - targets: ['web:8011', 'host.docker.internal:8011']
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
