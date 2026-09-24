@@ -336,22 +336,32 @@ powershell -ExecutionPolicy Bypass -File scripts\probe-observability.ps1
 #### 1. AlphaTracer Financial API (FastAPI Swagger Contract UI)
 ![FastAPI Swagger UI](docs/screenshots/01_fastapi_swagger.png)
 
-#### 2. Prometheus Active Scrape Targets (1/1 UP — Real Dynamic Metrics)
-![Prometheus Active Scrape Targets](docs/screenshots/03_prometheus_targets.png)
-
-#### 3. Grafana Unified Telemetry & Dashboards
+#### 2. Grafana Unified Telemetry & Golden Signals Dashboards
 ![Grafana UI](docs/screenshots/02_grafana_ui.png)
 
-#### 4. Jaeger Distributed Tracing (OTLP Waterfall Spans)
-![Jaeger Tracing UI](docs/screenshots/05_jaeger_tracing.png)
+#### 3. Prometheus PromQL Metrics Engine & Target Health (1/1 UP)
+![Prometheus PromQL Graph](docs/screenshots/03_prometheus_graph.png)
+![Prometheus Active Scrape Targets](docs/screenshots/03_prometheus_targets.png)
 
-#### 5. Alertmanager (Notification Routing & Webhooks)
+#### 4. Alertmanager (Notification Routing & Firing Alerts)
 ![Alertmanager UI](docs/screenshots/04_alertmanager_ui.png)
+
+#### 5. Jaeger Distributed Tracing (OTLP Waterfall Spans & DB Latency)
+![Jaeger Tracing UI](docs/screenshots/05_jaeger_tracing.png)
 
 #### 6. HashiCorp Vault (Dynamic Secrets & Central Identity)
 ![HashiCorp Vault UI](docs/screenshots/06_vault_ui.png)
 
-#### 7. K3s Kubernetes Cluster (Control Plane, ArgoCD & Workload Namespaces)
+#### 7. Local Container Registry v2 (Image Catalog API)
+![Local Docker Registry](docs/screenshots/07_local_registry.png)
+
+#### 8. Trivy Vulnerability Security Server (CVE Scan Service)
+![Trivy Server](docs/screenshots/08_trivy_server.png)
+
+#### 9. Loki Centralized Log Aggregator Engine
+![Loki Ready Probe](docs/screenshots/09_loki_ready.png)
+
+#### 10. K3s Kubernetes Cluster (Control Plane, Ingress & Workload Pods)
 ![K3s Cluster Pods and Nodes](docs/screenshots/10_k3s_cluster.png)
 
 ### ⚡ Quick Start: Manage Stack with Docker Compose
