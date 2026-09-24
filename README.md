@@ -104,7 +104,7 @@ Run before opening a Pull Request:
 
 ---
 
-## 📸 Genuine Terminal Working Proof (No Mockup, Real Execution)
+## 📸 terminal copy&paste
 
 ### 1. Shift-Left SAST & Unit Tests Running Locally (Zero `.env` on disk)
 ```text
@@ -295,7 +295,7 @@ Official, lightweight, high-value DevSecOps & Observability tools running smooth
 | **K3s Kubernetes Cluster** | [`https://localhost:6443`](https://localhost:6443) | Lightweight On-Premise Kubernetes Control Plane | 🟢 Active |
 | **AlphaTracer API (FastAPI)** | [`http://localhost:8011/docs`](http://localhost:8011/docs) | Financial market data backend (Swagger UI & `/health`) | 🟢 Active |
 
-### 📋 Live Platform Execution Log (Demonstration for Technical Interviews)
+### 📋 Live Platform Execution Log
 Run the automated live probe script anytime to verify all 10 services and K3s cluster health:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\probe-observability.ps1
