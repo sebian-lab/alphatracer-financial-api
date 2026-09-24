@@ -20,8 +20,7 @@ class PricePoint(BaseModel):
     close_price: float
     volume: int = 0
 
-    class Config:
-        from_orm = True
+    model_config = {"from_attributes": True}
 
 
 # In-memory cache with TTL of 60 seconds

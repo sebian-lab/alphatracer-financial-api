@@ -1,4 +1,4 @@
-# 📈 AlphaTracer Financial API — Student DevSecOps & Multi-Branch GitOps Platform
+# 📈 AlphaTracer Financial API — DevSecOps & Multi-Branch GitOps Platform
 
 [![DevSecOps Pipeline](https://img.shields.io/badge/CI%2FCD-3--Branch%20GitHub%20Actions-blue?logo=githubactions)](https://github.com/sebian-lab/alphatracer-financial-api/actions)
 [![Infrastructure](https://img.shields.io/badge/Infrastructure-Local%203--Node%20K3s%20Cluster-green?logo=kubernetes)](https://k3s.io/)
@@ -8,21 +8,19 @@
 [![IaC Verification](https://img.shields.io/badge/IaC-Terraform-purple?logo=terraform)](https://www.terraform.io/)
 [![Shift-Left Security](https://img.shields.io/badge/Security-Pre--Commit%20%2B%20Gitleaks%20%2B%20Bandit-cyan)](#-developer-productivity--pre-commit-safeguards)
 [![Zero Cloud Cost](https://img.shields.io/badge/Cloud%20Spend-%240%20Zero%20Cost%20Homelab-success)](#-zero-cloud-cost--live-3-node-k3s-cluster-architecture)
-[![Target Role](https://img.shields.io/badge/Candidate-Student%20DevSecOps%20Internship-gold)](#-student-mission--why-i-built-this)
+[![Target Role](https://img.shields.io/badge/Focus-Software%20Engineering%20%2F%20DevSecOps-blue)](#-competencies--engineering-focus-general-internship-presentation)
 
-> 🎓 **Engineering Student Portfolio Project**: Demonstrating an authentic, production-grade **DevSecOps & GitOps Pipeline** across a structured **3-branch workflow (`dev`, `main`, `prod`)** using **Shift-Left Pre-Commit Checks**, **GitHub Actions Free Tier**, and **Local K3s Auto-Pull Kubernetes Deployments** at **$0 cloud cost**. Built by an ambitious engineering student targeting **DevOps / SecOps / DevSecOps Internships** in **Belgium** 🇧🇪 and **Luxembourg** 🇱🇺.
+> 🎓 **Engineering Internship Portfolio Project**: A production-grade **DevSecOps & GitOps Platform** demonstrating an automated **3-branch workflow (`dev`, `main`, `prod`)**, **Shift-Left Security**, **GitHub Actions CI/CD**, **Container Supply Chain Security (Trivy, Cosign, SBOM)**, **Policy-as-Code (Kyverno)**, and **Full-Stack Observability**.
 
 ---
 
-## 👨‍💻 Student Mission: Why I Built This
+## 🎯 Engineering Objectives & Project Architecture
 
-As an aspiring DevOps / DevSecOps engineer preparing for an internship, I wanted to go beyond simple "toy projects" and theoretical tutorials. Real companies don't push straight to `main` without security gates, nor do they rely on manual `kubectl apply` commands in production.
-
-This repository serves as a **hands-on working proof** of my ability to:
-1. **Architect multi-stage release branches (`dev` ➔ `main` ➔ `prod`)** with automated promotion and branch protection safeguards.
-2. **Shift security left to the local workstation**: block leaked credentials and vulnerable code *before* it can even be committed (`.pre-commit-config.yaml` + Gitleaks + Bandit).
-3. **Automate container supply chain verification**: scan CVEs (Trivy), generate SBOMs (Syft/Anchore), and sign container images keylessly via Cosign and GitHub OIDC.
-4. **Build a 100% Free / On-Premise GitOps engine**: run an actual **3-node K3s cluster** locally with ArgoCD auto-pulling declarative Kustomize overlays.
+This repository demonstrates practical implementation of production software delivery standards:
+1. **Multi-stage release branches (`dev` ➔ `main` ➔ `prod`)** with automated promotion and branch protection safeguards.
+2. **Shift security left to the local workstation**: block leaked credentials and vulnerable code *before* commit (`.pre-commit-config.yaml` + Gitleaks + Bandit).
+3. **Automate container supply chain verification**: scan CVEs (Trivy), generate SBOMs (Anchore), and sign container images keylessly via Cosign and GitHub OIDC.
+4. **Declarative GitOps and Cluster Management**: manage multi-environment Kustomize overlays (`dev` and `prod`) with Kubernetes admission controls and active observability.
 
 ---
 
@@ -226,68 +224,34 @@ k3sslave2   Ready    <none>          v1.36.2+k3s1   10.0.2.15        Ubuntu 26.0
 ```
 
 ### Cluster Architecture & Namespaces
-![K3s Live Cluster Namespaces & Component Architecture](deepseek_mermaid_20260725_44c46c.png)
+![K3s Live Cluster Namespaces & Component Architecture](readme/deepseek_mermaid_20260725_44c46c.png)
 
 ---
 
-## 🖥️ Local Dev vs. Prod Environment Matrix & Live URLs
+## 🖥️ Option 1: The Essential Observability & Platform Stack (Recommended)
 
-When running the sandbox cluster locally (either on your K3s VM node `192.168.56.109` or localhost via port-forwarding), both **Development (`dev`)** and **Production (`prod`)** environments run simultaneously in isolated namespaces, alongside the complete DevSecOps platform services:
+Official, lightweight, high-value DevSecOps & Observability tools running smoothly locally on your laptop:
 
-### 1. Application & Branch Endpoints (Dev vs. Prod vs. Staging)
+| Platform Component | Local Endpoint URL | Role / Why It Matters | Status |
+| :--- | :--- | :--- | :--- |
+| **Grafana UI** | [`http://localhost:3000`](http://localhost:3000) (admin / admin) | Unified Golden Signals, Dashboards, and Visualizations | 🟢 Active |
+| **Alertmanager** | [`http://localhost:9093`](http://localhost:9093) | Prometheus Alert Routing, Silences & Webhooks | 🟢 Active |
+| **Jaeger Tracing** | [`http://localhost:16686`](http://localhost:16686) | Distributed Tracing & Waterfall Latency Analysis | 🟢 Active |
+| **Loki Log Aggregator** | [`http://localhost:3100`](http://localhost:3100) | Centralized Container Log Aggregation Engine | 🟢 Active |
+| **Local Docker Registry**| [`http://localhost:5000`](http://localhost:5000) | Local Container Image Push/Pull Registry Cache | 🟢 Active |
+| **HashiCorp Vault** | [`http://localhost:8200`](http://localhost:8200) | Automated secret storage, leasing & dynamic rotation | 🟢 Active |
+| **Prometheus Metrics** | [`http://localhost:9090`](http://localhost:9090) | Time-Series Metrics Scraper & PromQL Target Status | 🟢 Active |
+| **Trivy Vulnerability Server** | [`http://localhost:4954`](http://localhost:4954) | Container & Dependency Security CVE Scanner | 🟢 Active |
+| **K3s Kubernetes Cluster** | [`https://localhost:6443`](https://localhost:6443) | Lightweight On-Premise Kubernetes Control Plane | 🟢 Active |
+| **AlphaTracer API (FastAPI)** | [`http://localhost:8011/docs`](http://localhost:8011/docs) | Financial market data backend (Swagger UI & `/health`) | 🟢 Active |
 
-| Environment / Service | Local Endpoint URL | Ingress / DNS Pattern | Cluster Namespace & Port-Forward Command | Purpose / Gating |
-| :--- | :--- | :--- | :--- | :--- |
-| **API Docs (Swagger)** | [`http://localhost:8011/docs`](http://localhost:8011/docs) | `https://alphatracer.local/docs` | `kubectl port-forward -n alphatracer svc/alphatracer-service 8011:8011` | Production release candidate UI |
-| **API Health Probe** | [`http://localhost:8011/health`](http://localhost:8011/health) | `https://alphatracer.local/health` | `kubectl port-forward -n alphatracer svc/alphatracer-service 8011:8011` | Production SLA probe (`{"status":"ok"}`) |
-| **API Metrics** | [`http://localhost:8011/metrics`](http://localhost:8011/metrics) | `https://alphatracer.local/metrics` | `kubectl port-forward -n alphatracer svc/alphatracer-service 8011:8011` | Production Prometheus metrics target |
-| **OpenAPI Specification**| [`http://localhost:8011/openapi.json`](http://localhost:8011/openapi.json) | `https://alphatracer.local/openapi.json` | `kubectl port-forward -n alphatracer svc/alphatracer-service 8011:8011` | Contract & schema verification |
-| **ReDoc UI** | [`http://localhost:8011/redoc`](http://localhost:8011/redoc) | `https://alphatracer.local/redoc` | `kubectl port-forward -n alphatracer svc/alphatracer-service 8011:8011` | Clean alternative API documentation |
-| **Dev API Docs** | [`http://localhost:8012/docs`](http://localhost:8012/docs) | `https://dev.alphatracer.local/docs` | `kubectl port-forward -n alphatracer-dev svc/alphatracer-service 8012:8011` | Rapid testing & integration testing |
-| **Dev Health Probe** | [`http://localhost:8012/health`](http://localhost:8012/health) | `https://dev.alphatracer.local/health`| `kubectl port-forward -n alphatracer-dev svc/alphatracer-service 8012:8011` | Dev readiness/liveness check |
-| **Dev Metrics** | [`http://localhost:8012/metrics`](http://localhost:8012/metrics) | `https://dev.alphatracer.local/metrics`| `kubectl port-forward -n alphatracer-dev svc/alphatracer-service 8012:8011` | Dev Prometheus scraping job |
-| **Staging Preview** | `http://localhost:8013/docs` | `https://staging.alphatracer.local` | `kubectl port-forward -n alphatracer-staging svc/alphatracer-service 8013:8011` | Release candidate validation |
-| **PR Preview Workload** | `http://localhost:80<PR#>` | `https://pr-<num>.dev.alphatracer.local`| Ephemeral namespace `pr-<num>` | Dynamic branch preview |
+### ⚡ Quick Start: Manage Stack with Docker Compose
+```bash
+# Start the complete platform stack in the background
+docker compose up -d
 
----
-
-### 2. DevSecOps Platform & Enforcement Services
-
-| Platform Layer | Tool | Local Endpoint URL | Cluster Namespace & Command | Why It Matters / Enforcement Role |
-| :--- | :--- | :--- | :--- | :--- |
-| **Secrets Engine** | [HashiCorp Vault](https://www.vaultproject.io/) | [`http://localhost:8200`](http://localhost:8200) | `kubectl port-forward -n vault svc/vault 8200:8200` | Automated secret storage, leasing & dynamic rotation |
-| **Local Registry** | [Harbor Registry](https://goharbor.io/) / K3s Registry | [`http://localhost:5000`](http://localhost:5000) • `8443` | `kubectl port-forward -n harbor svc/harbor 8443:443` | Local pull path & internal vulnerability cache |
-| **GitOps Controller**| [ArgoCD UI](https://argo-cd.readthedocs.io/) | [`https://localhost:8080`](https://localhost:8080) | `kubectl port-forward -n argocd svc/argocd-server 8080:443` | Auto-sync, prune, and visual drift detection |
-| **ArgoCD Dev App** | ArgoCD Application | [`https://localhost:8080/applications/alphatracer-dev`](https://localhost:8080/applications/alphatracer-dev) | Namespace `argocd` | Syncs `overlays/dev` to `alphatracer-dev` |
-| **ArgoCD Prod App**| ArgoCD Application | [`https://localhost:8080/applications/alphatracer-prod`](https://localhost:8080/applications/alphatracer-prod) | Namespace `argocd` | Syncs `overlays/prod` to `alphatracer` |
-| **Runtime Security**| [Falco + Sidekick UI](https://falco.org/) | [`http://localhost:2801`](http://localhost:2801) | `kubectl port-forward -n falco svc/falcosidekick-ui 2801:2801` | Real-time kernel eBPF behavioral threat detection |
-| **Policy Verification**| [Kyverno Policy Reporter](https://kyverno.github.io/policy-reporter/) | [`http://localhost:8082`](http://localhost:8082) | `kubectl port-forward -n kyverno svc/policy-reporter 8082:8082` | Cluster admission pass/fail visual compliance report |
-| **Metrics Engine** | [Prometheus UI](https://prometheus.io/) | [`http://localhost:9090`](http://localhost:9090) | `kubectl port-forward -n monitoring svc/prometheus-k8s 9090:9090` | PromQL query engine & target status |
-| **Prometheus Targets**| Prometheus Targets Page | [`http://localhost:9090/targets`](http://localhost:9090/targets) | Namespace `monitoring` | Dev (`alphatracer-dev`) vs Prod scrape targets |
-| **Observability** | [Grafana UI](https://grafana.com/) | [`http://localhost:3000`](http://localhost:3000) (admin / prom-operator) | `kubectl port-forward -n monitoring svc/grafana 3000:3000` | Unified Golden Signals, CPU, memory dashboards |
-| **Grafana Dev Dash**| Grafana Dashboard | `http://localhost:3000/d/alphatracer-dev` | Namespace `monitoring` | Rapid iteration error rate & request duration |
-| **Grafana Prod Dash**| Grafana Dashboard | `http://localhost:3000/d/alphatracer-prod` | Namespace `monitoring` | Production SLA / SLO compliance view |
-| **Alert Routing** | [Alertmanager](https://prometheus.io/docs/alerting/latest/alertmanager/) | [`http://localhost:9093`](http://localhost:9093) | `kubectl port-forward -n monitoring svc/alertmanager-main 9093:9093` | Alert routing, silences & notification webhooks |
-| **Distributed Trace**| [Jaeger UI](https://www.jaegertracing.io/) | [`http://localhost:16686`](http://localhost:16686) | `kubectl port-forward -n monitoring svc/jaeger-query 16686:16686` | OpenTelemetry distributed trace waterfall analysis |
-| **Centralized Logs** | [Grafana Loki](https://grafana.com/oss/loki/) | `http://localhost:3100` | `kubectl port-forward -n monitoring svc/loki 3100:3100` | Log aggregation across all pods |
-| **Ingress & TLS** | [Traefik / Cert-Manager](https://traefik.io/) | Ingress Controller | NodePort 80/443 | Automatic TLS certificate issuance & routing |
-
-### ⚡ One-Liner to Forward All Monitoring & Platform Ports:
-Run our provided PowerShell helper script:
-```powershell
-.\scripts\port-forward-all.ps1
-```
-Or execute directly:
-```powershell
-kubectl port-forward -n alphatracer svc/alphatracer-service 8011:8011 &
-kubectl port-forward -n alphatracer-dev svc/alphatracer-service 8012:8011 &
-kubectl port-forward -n argocd svc/argocd-server 8080:443 &
-kubectl port-forward -n monitoring svc/prometheus-k8s 9090:9090 &
-kubectl port-forward -n monitoring svc/grafana 3000:3000 &
-kubectl port-forward -n monitoring svc/alertmanager-main 9093:9093 &
-kubectl port-forward -n falco svc/falcosidekick-ui 2801:2801 &
-kubectl port-forward -n kyverno svc/policy-reporter 8082:8082 &
-kubectl port-forward -n vault svc/vault 8200:8200 &
+# Verify all services status
+docker compose ps
 ```
 
 
@@ -300,7 +264,7 @@ kubectl port-forward -n vault svc/vault 8200:8200 &
 | :--- | :--- | :--- | :--- | :--- |
 | **API Application (Local)** | [FastAPI](https://fastapi.tiangolo.com/) + PostgreSQL | Financial market data & portfolio tracking backend | [`http://localhost:8011/docs`](http://localhost:8011/docs) • [`/health`](http://localhost:8011/health) | [app/main.py](app/main.py) • [Usage&examples.md](Usage&examples.md) |
 | **Observability (Metrics)**| [Prometheus](https://prometheus.io/) | Scraping application metrics (`/metrics`) and cluster node states | [`http://localhost:8011/metrics`](http://localhost:8011/metrics) • `http://localhost:9090` | [Prometheus Setup](infrastructure/kubernetes/base/deployment.yaml) |
-| **Observability (Dashboards)**| [Grafana](https://grafana.com/) | Real-time dashboards visualizing cluster health & latency | [`http://localhost:3000`](http://localhost:3000) (admin / prom-operator) | Running in `monitoring` namespace |
+| **Observability (Dashboards)**| [Grafana](https://grafana.com/) | Real-time dashboards visualizing cluster health & latency | [`http://localhost:3000`](http://localhost:3000) (admin / admin) | Running in local Docker compose |
 | **GitOps Engine (ArgoCD)**| [ArgoCD Controller](https://argo-cd.readthedocs.io/) | Continuous delivery and auto-sync on K3s cluster | [`https://localhost:8080`](https://localhost:8080) (or NodePort `30080`) | [argo-app.yaml](infrastructure/kubernetes/argo-app.yaml) • [argo-app-prod.yaml](infrastructure/kubernetes/argo-app-prod.yaml) |
 | **Policy Engine** | [Kyverno Admission Controller](https://kyverno.io/) | Admission control policy blocking root and privileged pods | Cluster Webhook (`validate.kyverno.svc`) | [policies/kyverno/disallow-root.yaml](policies/kyverno/disallow-root.yaml) |
 | **Kubernetes Cluster** | [K3s Cluster (3-Node)](https://k3s.io/) | Zero-cloud-cost on-premise Kubernetes control plane | [`https://192.168.56.109:6443`](https://192.168.56.109:6443) (`k3smaster`) | [Node Topology & Architecture](#-zero-cloud-cost--live-3-node-k3s-cluster-architecture) |
@@ -382,16 +346,18 @@ gh pr create --base prod --head main --title "release: promote v1.2 to productio
 
 ---
 
-## 🇧🇪🇱🇺 Target Roles (Belgium & Luxembourg)
+## 💼 Competencies & Engineering Focus (General Internship Presentation)
 
-| Focus Area | What I Bring as a Student / Intern |
+| Focus Area | Demonstrated Competency & Practical Implementation |
 | :--- | :--- |
-| **Fintech & Regulated Entities (Luxembourg)** | Understanding of **DORA & NIS2 audit readiness**, cryptographic provenance (Cosign/SBOM), SARIF dashboards, and non-root admission controls. |
-| **Consultancies & Enterprise IT (Belgium)** | Real hands-on experience with **Kubernetes cluster administration**, Kustomize overlay structures, CI/CD pipeline automation, and developer ergonomics. |
+| **Cloud & Platform Engineering** | Multi-environment Kubernetes cluster management, Kustomize overlay separation (`dev`, `prod`), GitOps automation, and declarative infrastructure. |
+| **DevSecOps & Compliance** | Shift-left SAST (Bandit), secret detection (Gitleaks), container vulnerability scanning (Trivy), SBOM generation (SPDX 2.3), and admission control policies (Kyverno). |
+| **Software Supply Chain Security** | Cryptographic keyless container signing with Cosign (Sigstore / GitHub OIDC), automated policy gating, and SARIF audit reporting. |
+| **Backend & Observability** | FastAPI API architecture, PostgreSQL database integration, Prometheus metrics scraping, and Grafana dashboard visualization. |
 
 ---
 
 <p align="center">
-  <b>Built by a passionate DevSecOps student eager to learn, test, iterate, and deliver impact.</b><br>
-  <i>Open for Internship Opportunities in Belgium 🇧🇪 and Luxembourg 🇱🇺</i>
+  <b>AlphaTracer Financial API — Engineering & DevSecOps Platform</b><br>
+  <i>Designed and built for presenting technical skills for software engineering and DevSecOps internships.</i>
 </p>

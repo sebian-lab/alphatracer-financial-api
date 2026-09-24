@@ -9,7 +9,7 @@ RFC validators (e.g. pydantic-email-validator) reject.
 from datetime import datetime
 from typing import Optional, Annotated
 import re
-from pydantic import BaseModel, Field, AfterValidator
+from pydantic import BaseModel, Field, AfterValidator, computed_field
 
 
 def _lenient_email(v: str) -> str:
@@ -52,6 +52,11 @@ class UserResponse(BaseModel):
     updated_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
+
+    @computed_field
+    @property
+    def user_id(self) -> int:
+        return self.id
 
 
 class Token(BaseModel):
