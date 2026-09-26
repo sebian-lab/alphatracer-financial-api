@@ -20,3 +20,9 @@ psycopg2-binary>=2.9.0
 # Testing & QA
 pytest>=7.0.0
 httpx>=0.24.0
+
+# Observability & Distributed Tracing (Jaeger OTLP)
+opentelemetry-api>=1.20.0
+opentelemetry-sdk>=1.20.0
+opentelemetry-instrumentation-fastapi>=0.41b0
+opentelemetry-exporter-otlp-proto-http>=1.20.0

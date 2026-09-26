@@ -207,19 +207,13 @@ bash ./scripts/mock-k3s-autopull.sh dev
 
 ---
 
-## 🖥️ Zero Cloud Cost: Homelab 3-Node K3s Cluster
+## 🖥️ Zero Cloud Cost: Containerized & Homelab K3s Architecture
 
-Rather than burning expensive cloud credits (AWS EKS or Azure AKS), this platform runs on a **self-hosted 3-node K3s cluster** built on local virtualization:
+Rather than burning expensive cloud credits (AWS EKS or Azure AKS), this platform is designed under a **Zero Cloud Cost** paradigm:
+- **Local Dev Tier**: Runs a containerized single-node K3s cluster engine inside Docker (`localhost:6443`), requiring zero VMs.
+- **Homelab Blueprint**: Scalable to a multi-node K3s topology (`k3smaster`, `k3sslave1`, `k3sslave2`) using virtualization or `k3d`.
 
-### Live Cluster Topology (`kubectl get nodes -o wide`)
-```
-NAME        STATUS   ROLES           VERSION        INTERNAL-IP      OS-IMAGE           CONTAINER-RUNTIME
-k3smaster   Ready    control-plane   v1.36.2+k3s1   192.168.56.109   Ubuntu 26.04 LTS   containerd://2.3.2-k3s2
-k3sslave1   Ready    <none>          v1.36.2+k3s1   10.0.2.15        Ubuntu 26.04 LTS   containerd://2.3.2-k3s2
-k3sslave2   Ready    <none>          v1.36.2+k3s1   10.0.2.15        Ubuntu 26.04 LTS   containerd://2.3.2-k3s2
-```
-
-### Cluster Architecture & Namespaces (System Schematic)
+### System Schematic & Component Topology
 
 ```mermaid
 flowchart TB
@@ -232,12 +226,12 @@ flowchart TB
         subgraph NS_App["Workload Namespaces: alphatracer / alphatracer-dev"]
             API["AlphaTracer API (FastAPI :8011)<br/>Non-Root appuser (UID 1000)"]
             DB[("PostgreSQL 15 DB<br/>Port :5432")]
-            SecInj["Kubernetes Secrets (alphatracer-secrets)<br/>Zero Cleartext .env on Disk"]
+            SecInj["Kubernetes Secrets (alphatracer-secrets)<br/>Injected via secretKeyRef"]
         end
 
         subgraph NS_Security["Policy-as-Code & GitOps Engine"]
-            Kyverno{"Kyverno Admission Webhook<br/>• Cosign Keyless Signature Verification<br/>• Disallow Root Execution (UID 0)<br/>• Enforce CPU/Memory Limits"}
-            Argo["ArgoCD GitOps Controller<br/>Auto-Sync Kustomize Overlays (dev/prod)"]
+            Kyverno{"Kyverno Policy-as-Code<br/>• Disallow Root Execution (UID 0)<br/>• Enforce CPU/Memory Limits"}
+            Argo["ArgoCD GitOps Manifests<br/>Declarative Overlays (dev/prod)"]
         end
 
         subgraph NS_Monitoring["Observability & Telemetry Stack"]
@@ -250,7 +244,7 @@ flowchart TB
     end
 
     subgraph Platform["Supporting Platform & External Services"]
-        Vault["HashiCorp Vault (:8200)<br/>Dynamic Secret Leasing"]
+        Vault["HashiCorp Vault (:8200)<br/>Dynamic Secret Leasing & KV Store"]
         Registry["Local Docker Registry (:5000)<br/>Local OCI Container Cache"]
         Trivy["Trivy Server (:4954)<br/>Vulnerability Scanner Server"]
         YahooFinance["Yahoo Finance (yfinance)<br/>Live Quotes & Financial Metrics"]
@@ -261,39 +255,40 @@ flowchart TB
     Ingress -->|Route /api/v1| API
     API -->|Read / Write SQL| DB
     SecInj -.->|In-Memory Secret KeyRef| API
+    Vault -.->|Dynamic HTTP Secret Retrieval| API
     API -->|Cached Market Queries| YahooFinance
 
     %% GitOps & Admission Control
-    Argo -->|Declarative Sync| NS_App
-    Kyverno -->|Validate Pod Admission| API
+    Argo -.->|Declarative Sync| NS_App
+    Kyverno -.->|Policy Audit| API
 
     %% Observability Scrapes & Traces
     Prom -->|Scrape Metrics| API
     Prom -->|Fire Alerts| Alert
     Grafana -->|PromQL| Prom
     Grafana -->|LogQL| Loki
-    API -->|Send Spans| Jaeger
-    API -->|Ship Logs| Loki
+    API -->|Send Spans (OTLP)| Jaeger
+    API -->|Ship Logs (HTTP Push)| Loki
 ```
 
 ---
 
-## 🖥️ Option 1: The Essential Observability & Platform Stack (Recommended)
+## 🖥️ Complete DevSecOps & Observability Platform Stack
 
-Official, lightweight, high-value DevSecOps & Observability tools running smoothly locally on your laptop:
+All 10 services are pre-wired and running locally via Docker Compose (`docker compose up -d`):
 
 | Platform Component | Local Endpoint URL | Role / Why It Matters | Status |
 | :--- | :--- | :--- | :--- |
+| **AlphaTracer API (FastAPI)** | [`http://localhost:8011/docs`](http://localhost:8011/docs) | Financial market data backend (Swagger UI & `/health`) | 🟢 Active |
+| **Prometheus Metrics** | [`http://localhost:9090`](http://localhost:9090) | Time-Series Metrics Scraper & PromQL Target Status | 🟢 Active |
 | **Grafana UI** | [`http://localhost:3000`](http://localhost:3000) (admin / admin) | Unified Golden Signals, Dashboards, and Visualizations | 🟢 Active |
 | **Alertmanager** | [`http://localhost:9093`](http://localhost:9093) | Prometheus Alert Routing, Silences & Webhooks | 🟢 Active |
-| **Jaeger Tracing** | [`http://localhost:16686`](http://localhost:16686) | Distributed Tracing & Waterfall Latency Analysis | 🟢 Active |
-| **Loki Log Aggregator** | [`http://localhost:3100`](http://localhost:3100) | Centralized Container Log Aggregation Engine | 🟢 Active |
-| **Local Docker Registry**| [`http://localhost:5000`](http://localhost:5000) | Local Container Image Push/Pull Registry Cache | 🟢 Active |
-| **HashiCorp Vault** | [`http://localhost:8200`](http://localhost:8200) | Automated secret storage, leasing & dynamic rotation | 🟢 Active |
-| **Prometheus Metrics** | [`http://localhost:9090`](http://localhost:9090) | Time-Series Metrics Scraper & PromQL Target Status | 🟢 Active |
-| **Trivy Vulnerability Server** | [`http://localhost:4954`](http://localhost:4954) | Container & Dependency Security CVE Scanner | 🟢 Active |
-| **K3s Kubernetes Cluster** | [`https://localhost:6443`](https://localhost:6443) | Lightweight On-Premise Kubernetes Control Plane | 🟢 Active |
-| **AlphaTracer API (FastAPI)** | [`http://localhost:8011/docs`](http://localhost:8011/docs) | Financial market data backend (Swagger UI & `/health`) | 🟢 Active |
+| **Jaeger Tracing** | [`http://localhost:16686`](http://localhost:16686) | OTLP Distributed Tracing & Request Latency Spans | 🟢 Active |
+| **Loki Log Engine** | [`http://localhost:3100`](http://localhost:3100) | Centralized JSON Container Log Stream Collector | 🟢 Active |
+| **HashiCorp Vault** | [`http://localhost:8200`](http://localhost:8200) | Centralized KV v2 Secret Management & Dynamic Retrieval | 🟢 Active |
+| **Local Docker Registry**| [`http://localhost:5000`](http://localhost:5000) | Local Container Push/Pull Distribution Cache | 🟢 Active |
+| **K3s Kubernetes Cluster** | [`https://localhost:6443`](https://localhost:6443) | Lightweight Kubernetes Control Plane for Testing Manifests | 🟢 Active |
+| **Trivy Vulnerability Server** | [`http://localhost:4954`](http://localhost:4954) | Container & Dependency Security CVE Scanner Daemon | 🟢 Active |
 
 ### 📋 Live Platform Execution Log
 Run the automated live probe script anytime to verify all 10 services and K3s cluster health:

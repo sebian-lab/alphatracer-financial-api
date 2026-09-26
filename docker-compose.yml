@@ -36,20 +36,20 @@ services:
       TICKER_UPDATE_INTERVAL_HOURS: 12
       PRICE_API_PROVIDER: yfinance
       ALLOWED_ORIGINS: "*"
+      # Industrial Integrations
+      VAULT_ADDR: ${VAULT_ADDR:-http://vault:8200}
+      VAULT_TOKEN: ${VAULT_TOKEN:-root}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
+      LOKI_URL: ${LOKI_URL:-http://loki:3100/loki/api/v1/push}
+      ENABLE_TRACING: "true"
+      ENABLE_LOKI: "true"
     depends_on:
       db:
         condition: service_healthy
     volumes:
       - ./app:/app/app
 
-  trivy:
-    image: aquasec/trivy:latest
-    container_name: alphatracer-trivy
-    command: server --listen 0.0.0.0:4954
-    ports:
-      - "4954:4954"
-    restart: unless-stopped
-
+  # ── Dynamic Secret Management (HashiCorp Vault) ──
   vault:
     image: hashicorp/vault:latest
     container_name: alphatracer-vault
@@ -60,6 +60,16 @@ services:
       - "8200:8200"
     restart: unless-stopped
 
+  # ── Container Vulnerability Security (Trivy Server) ──
+  trivy:
+    image: aquasec/trivy:latest
+    container_name: alphatracer-trivy
+    command: server --listen 0.0.0.0:4954
+    ports:
+      - "4954:4954"
+    restart: unless-stopped
+
+  # ── Metrics Telemetry Engine (Prometheus) ──
   prom:
     image: prom/prometheus:latest
     container_name: alphatracer-prom
@@ -69,6 +79,7 @@ services:
       - "9090:9090"
     restart: unless-stopped
 
+  # ── Kubernetes Control Plane (K3s Engine) ──
   k3s:
     image: rancher/k3s:v1.31.0-k3s1
     container_name: alphatracer-k3s
@@ -84,6 +95,7 @@ services:
       - ./infrastructure/kubernetes:/output
     restart: unless-stopped
 
+  # ── Unified Dashboards & Observability (Grafana) ──
   grafana:
     image: grafana/grafana:latest
     container_name: alphatracer-grafana
@@ -97,6 +109,7 @@ services:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
     restart: unless-stopped
 
+  # ── Alert Routing & Notification Engine (Alertmanager) ──
   alertmanager:
     image: prom/alertmanager:latest
     container_name: alphatracer-alertmanager
@@ -104,6 +117,7 @@ services:
       - "9093:9093"
     restart: unless-stopped
 
+  # ── Distributed Tracing Backend (Jaeger OTLP) ──
   jaeger:
     image: jaegertracing/all-in-one:latest
     container_name: alphatracer-jaeger
@@ -115,6 +129,7 @@ services:
       - COLLECTOR_OTLP_ENABLED=true
     restart: unless-stopped
 
+  # ── Centralized Log Aggregation (Grafana Loki) ──
   loki:
     image: grafana/loki:latest
     container_name: alphatracer-loki
@@ -123,6 +138,7 @@ services:
     command: -config.file=/etc/loki/local-config.yaml
     restart: unless-stopped
 
+  # ── Local OCI Container Image Registry Cache ──
   registry:
     image: registry:2
     container_name: alphatracer-registry
@@ -135,3 +151,4 @@ services:
 volumes:
   postgres_data:
   k3s_data:
+

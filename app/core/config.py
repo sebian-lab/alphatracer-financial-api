@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     PRICE_API_PROVIDER: str = "yfinance"
 
 
+    # HashiCorp Vault Configuration (Optional Central Secret Engine)
+    VAULT_ADDR: str = ""
+    VAULT_TOKEN: str = "root"
+    VAULT_SECRET_PATH: str = "alphatracer"
+
     # API Configuration
     API_V1_PREFIX: str = "/api/v1"
 
@@ -54,7 +59,29 @@ class Settings(BaseSettings):
     def api_v1_prefix(self) -> str:
         return self.API_V1_PREFIX
 
+    def load_vault_secrets(self) -> None:
+        """Dynamically retrieves production secrets from HashiCorp Vault if configured."""
+        if not self.VAULT_ADDR:
+            return
 
-# This will now fail immediately if your .env is missing
-# DATABASE_URL or SECRET_KEY, preventing "localhost" errors.
+        import httpx
+
+        url = f"{self.VAULT_ADDR.rstrip('/')}/v1/secret/data/{self.VAULT_SECRET_PATH}"
+        try:
+            resp = httpx.get(
+                url, headers={"X-Vault-Token": self.VAULT_TOKEN}, timeout=2.5
+            )
+            if resp.status_code == 200:
+                data = resp.json().get("data", {}).get("data", {})
+                if "database_url" in data:
+                    self.DATABASE_URL = data["database_url"]
+                if "secret_key" in data:
+                    self.SECRET_KEY = data["secret_key"]
+                print(f"[vault] Successfully loaded secrets from {url}")
+        except Exception as exc:
+            print(f"[vault] Could not load secrets from Vault (falling back to env): {exc}")
+
+
 settings = Settings()
+settings.load_vault_secrets()
+
