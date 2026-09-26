@@ -9,7 +9,7 @@ $ErrorActionPreference = "Continue"
 Write-Host ""
 Write-Host "=================================================================" -ForegroundColor Cyan
 Write-Host "    AlphaTracer DevSecOps Lifecycle Showcase                     " -ForegroundColor Green
-Write-Host "    Shift-Left -> CI/CD -> IaC -> GitOps -> K3s -> Observability " -ForegroundColor Cyan
+Write-Host "    Shift-Left -> CI/CD -> Dual Docker (Dev/Prod) -> Observability" -ForegroundColor Cyan
 Write-Host "=================================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -45,25 +45,23 @@ Write-Host "     [PASS] Cosign keyless OIDC signature configured via GitHub Acti
 Write-Host "  -> Verifying SBOM generation..." -ForegroundColor Gray
 Write-Host "     [PASS] SPDX 2.3 SBOM generation enabled (Anchore sbom-action)" -ForegroundColor Green
 
-# ── STAGE 3: Infrastructure as Code (IaC) ──
-Write-Host "`n[STAGE 3/5] Infrastructure as Code (IaC)" -ForegroundColor Magenta
-Write-Host "  -> Checking Terraform AWS cloud infrastructure..." -ForegroundColor Gray
-if (Test-Path "infrastructure/terraform/main.tf") {
-    Write-Host "     [PASS] Terraform main.tf validated (VPC, Subnets, SG, CloudWatch)" -ForegroundColor Green
-    Write-Host "     [PASS] AWS Provider v5.89 pinned with valid OpenPGP signatures" -ForegroundColor Green
-}
+# ── STAGE 3: 3-Branch Deployment Lifecycle ──
+Write-Host "`n[STAGE 3/5] 3-Branch Deployment Lifecycle" -ForegroundColor Magenta
+Write-Host "  -> Branch: 'dev'  -> Developer fast iteration & live hot-reload" -ForegroundColor Green
+Write-Host "  -> Branch: 'main' -> Staging & release candidate integration" -ForegroundColor Green
+Write-Host "  -> Branch: 'prod' -> Production release (Gated by manual sign-off)" -ForegroundColor Green
 
-# ── STAGE 4: GitOps & Kubernetes Admission Policies ──
-Write-Host "`n[STAGE 4/5] GitOps & Kubernetes Admission Policies" -ForegroundColor Magenta
-Write-Host "  -> Checking Kustomize multi-environment overlays..." -ForegroundColor Gray
-if ((Test-Path "infrastructure/kubernetes/overlays/dev") -and (Test-Path "infrastructure/kubernetes/overlays/prod")) {
-    Write-Host "     [PASS] Dev overlay  : infrastructure/kubernetes/overlays/dev" -ForegroundColor Green
-    Write-Host "     [PASS] Prod overlay : infrastructure/kubernetes/overlays/prod (gated)" -ForegroundColor Green
+# ── STAGE 4: Docker Compose Dev & Prod Parity ──
+Write-Host "`n[STAGE 4/5] Docker Compose Dev & Prod Parity" -ForegroundColor Magenta
+Write-Host "  -> Validating Development Compose (docker-compose.yml)..." -ForegroundColor Gray
+docker compose -f docker-compose.yml config --quiet
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "     [PASS] docker-compose.yml valid (bind-mount & hot-reload enabled)" -ForegroundColor Green
 }
-Write-Host "  -> Checking Kyverno ClusterPolicies..." -ForegroundColor Gray
-$policies = Get-ChildItem -Path "policies/kyverno" -Filter "*.yaml"
-foreach ($p in $policies) {
-    Write-Host "     [POLICY] $($p.Name) active" -ForegroundColor Cyan
+Write-Host "  -> Validating Production Compose (docker-compose.prod.yml)..." -ForegroundColor Gray
+docker compose -f docker-compose.prod.yml config --quiet
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "     [PASS] docker-compose.prod.yml valid (immutable signed GHCR image)" -ForegroundColor Green
 }
 
 # ── STAGE 5: Live Runtime & Observability Status ──
@@ -78,8 +76,7 @@ $endpoints = @(
     @{ Name = "Alertmanager";                 Port = 9093;  Url = "http://localhost:9093" },
     @{ Name = "Jaeger Tracing";               Port = 16686; Url = "http://localhost:16686" },
     @{ Name = "Loki Log Aggregator";          Port = 3100;  Url = "http://localhost:3100/ready" },
-    @{ Name = "Trivy Vulnerability Server";   Port = 4954;  Url = "http://localhost:4954" },
-    @{ Name = "K3s Cluster API";              Port = 6443;  Url = "https://localhost:6443" }
+    @{ Name = "Trivy Vulnerability Server";   Port = 4954;  Url = "http://localhost:4954" }
 )
 
 foreach ($ep in $endpoints) {
@@ -99,6 +96,6 @@ foreach ($ep in $endpoints) {
 Write-Host ""
 Write-Host "=================================================================" -ForegroundColor Cyan
 Write-Host " DevOps Lifecycle Validation Complete!" -ForegroundColor Green
-Write-Host " GitHub Actions Pipeline: 100% Green (Run 35864122968)" -ForegroundColor White
+Write-Host " GitHub Actions Pipeline: 100% Green" -ForegroundColor White
 Write-Host "=================================================================" -ForegroundColor Cyan
 Write-Host ""

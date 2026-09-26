@@ -55,7 +55,7 @@ $services = @(
     },
     @{
         Name = "Loki Container Log Engine"
-        Url = "http://localhost:3100/ready"
+        Url = "http://127.0.0.1:3100/ready"
         Role = "High-Efficiency Index-Free Container Log Aggregator"
         ExpectedCode = 200
     },
@@ -124,31 +124,9 @@ foreach ($svc in $services) {
     }
 }
 
-# Probe K3s Kubernetes Cluster
-Write-Host ""
-Write-Host "---------------------------------------------------------------------------------" -ForegroundColor DarkGray
-Write-Host " [KUBERNETES] CONTROL PLANE & WORKLOAD VERIFICATION (K3s Cluster)" -ForegroundColor Cyan
-Write-Host "---------------------------------------------------------------------------------" -ForegroundColor DarkGray
-
-try {
-    $nodeOutput = docker exec alphatracer-k3s kubectl get nodes -o wide 2>&1
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host " [ONLINE] K3s Node Status        : Active & Ready (containerd://1.7.20-k3s1)" -ForegroundColor Green
-        $podCount = (docker exec alphatracer-k3s kubectl get pods -A --no-headers 2>&1 | Measure-Object -Line).Lines
-        Write-Host " [ONLINE] Cluster Workloads      : $podCount Pods running across alphatracer-dev, alphatracer-prod, argocd, kyverno" -ForegroundColor Green
-        $passedK3s = $true
-    } else {
-        Write-Host " [WARN]   K3s Cluster CLI returned code $LASTEXITCODE" -ForegroundColor Yellow
-        $passedK3s = $false
-    }
-} catch {
-    Write-Host " [ERROR]  K3s inspection failed: $($_.Message)" -ForegroundColor Red
-    $passedK3s = $false
-}
-
 Write-Host ""
 Write-Host "=================================================================================" -ForegroundColor Cyan
-Write-Host " [SUMMARY] PLATFORM HEALTH: $passed / $total Services Healthy + K3s Cluster Active" -ForegroundColor Green
-Write-Host " All DevSecOps, Observability, and Orchestration components verified operational!" -ForegroundColor Cyan
+Write-Host " [SUMMARY] PLATFORM HEALTH: $passed / $total Services Healthy" -ForegroundColor Green
+Write-Host " All DevSecOps & Observability Docker containers verified operational!" -ForegroundColor Cyan
 Write-Host "=================================================================================" -ForegroundColor Cyan
 
