@@ -34,30 +34,26 @@ flowchart TD
     end
 
     subgraph BranchDev["🧪 Branch: 'dev' (Development & Fast Iteration)"]
-        PushDev --> PipelineDev["Full CI/CD Pipeline<br/>• Pytest Unit & Financial Ledger Tests<br/>• Bandit Security Scan<br/>• Trivy Container CVE Scan (Export SARIF)<br/>• Push Dev Image to GHCR"]
-        PipelineDev --> AutoDevOverlay["Update overlays/dev/kustomization.yaml<br/>(Automated bot commit [skip ci])"]
-        AutoDevOverlay --> ArgoDev["ArgoCD Auto-Sync & Rolling Update<br/>Target Namespace: alphatracer-dev"]
+        PushDev --> PipelineDev["Full CI/CD Pipeline<br/>• Pytest Unit & Financial Ledger Tests<br/>• Bandit Security Scan<br/>• Trivy Container CVE Scan (Export SARIF)<br/>• Local Dev: docker-compose.yml (Hot-Reload)"]
     end
 
     subgraph BranchMain["🚀 Branch: 'main' (Staging & Release Candidate)"]
-        ArgoDev -.->|Open Pull Request| PRReview{"PR Code Review & Ruleset 19710100<br/>• Strict CI Gating Required<br/>• Linear Git History Enforced"}
-        PRReview -->|Merge PR| PipelineMain["Staging Verification Pipeline<br/>• Integration Test Suite<br/>• Syft SBOM Generation (SPDX format)<br/>• Push Staging Image to GHCR"]
-        PipelineMain --> ArgoStaging["ArgoCD Auto-Sync & Pre-Prod Validation"]
+        PipelineDev -.->|Open Pull Request| PRReview{"PR Code Review & CI Gating<br/>• Strict CI Checks Required<br/>• Linear Git History Enforced"}
+        PRReview -->|Merge PR| PipelineMain["Staging Verification Pipeline<br/>• Integration Test Suite<br/>• Syft SBOM Generation (SPDX format)<br/>• Staging Candidate Verification"]
     end
 
     subgraph BranchProd["🛡️ Branch: 'prod' (Production Release — Gated)"]
-        ArgoStaging -.->|Release Promotion PR| Gate{"🛑 MANUAL APPROVAL REQUIRED<br/>GitHub Environment: 'production'<br/>Lead Reviewer Sign-Off"}
-        Gate -->|Approved & Signed Off| PipelineProd["Production Sign & Deploy<br/>• Sigstore Cosign Keyless OIDC Signing<br/>• Rekor Transparency Log Recording<br/>• Update overlays/prod/kustomization.yaml"]
-        PipelineProd --> KyvernoVal{"Kyverno Admission Webhook<br/>• Verify Cryptographic Cosign Signature<br/>• Disallow Root Execution (UID 0)<br/>• Enforce CPU/Memory Limits"}
-        KyvernoVal -->|Valid| ArgoProd["ArgoCD Auto-Pull & Zero-Downtime Rollout<br/>Target Namespace: alphatracer"]
+        PipelineMain -.->|Release Promotion PR| Gate{"🛑 MANUAL APPROVAL REQUIRED<br/>GitHub Environment: 'production'<br/>Lead Reviewer Sign-Off"}
+        Gate -->|Approved & Signed Off| PipelineProd["Production Sign & Deploy<br/>• Sigstore Cosign Keyless OIDC Signing<br/>• Rekor Transparency Log Recording<br/>• Update docker-compose.prod.yml Image Tag"]
+        PipelineProd --> DockerProd["Production Docker Deployment<br/>• docker compose -f docker-compose.prod.yml up -d<br/>• Immutable signed image from GHCR"]
     end
 ```
 
-| Branch | Environment | Overlay Path | GitOps Sync Mechanism | Image Signing | Deployment Gate |
+| Branch | Environment | Compose File | Deployment Mechanism | Image Signing | Deployment Gate |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **`dev`** | Development (`alphatracer-dev`) | `infrastructure/kubernetes/overlays/dev` | ArgoCD Auto-Sync (`argo-app-dev.yaml`) | No (Fast iteration) | Automated |
-| **`main`** | Release Candidate / Staging | `infrastructure/kubernetes/overlays/prod` | ArgoCD Auto-Sync (`argo-app.yaml`) | Optional | Automated PR Review |
-| **`prod`** | Production (`alphatracer`) | `infrastructure/kubernetes/overlays/prod` | ArgoCD Auto-Sync (`argo-app-prod.yaml`)| **Yes (Cosign Keyless)** | **🛑 Manual Approval Only** |
+| **`dev`** | Development | `docker-compose.yml` | Local build & live hot-reload (`./app` bind mount) | No (Fast iteration) | Automated |
+| **`main`** | Release Candidate / Staging | `docker-compose.yml` | Pre-prod verification & SBOM | Optional | Automated PR Review |
+| **`prod`** | Production | `docker-compose.prod.yml` | Immutable GHCR pull (Zero host bind mounts) | **Yes (Cosign Keyless)** | **🛑 Manual Approval Only** |
 
 
 ---
@@ -104,7 +100,7 @@ Run before opening a Pull Request:
 
 ---
 
-## 📸 Genuine Terminal Working Proof (No Mockup, Real Execution)
+## 📸 terminal copy&paste
 
 ### 1. Shift-Left SAST & Unit Tests Running Locally (Zero `.env` on disk)
 ```text
@@ -152,150 +148,88 @@ completed   success  fix: add production defaults Full CI/CD Pipeline  dev     p
   ✓ Complete job
 ```
 
-### 5. Local Mockup Terminal Verification (`scripts/mock-k3s-autopull.ps1`)
-```text
-$ .\scripts\mock-k3s-autopull.ps1 -TargetBranch dev -SkipBuild
-
-[STUDENT EXPERIMENT] Local DevSecOps and K3s Auto-Pull Mockup
-=================================================================
-Active Git Branch : main
-Latest Commit SHA : 61aea48
-Target Environment: dev (Tracking overlays/dev)
-
-[STAGE 1/4] Running Shift-Left Pre-Commit Checks...
-  -> Running Bandit SAST scan on app/...
-  [OK] SAST checks passed. No high/medium severity vulnerabilities!
-
-[STAGE 2/4] Building Container Image (Simulating GitHub Actions CI)...
-  [SKIP] Build skipped via flag.
-
-[STAGE 3/4] Simulating GitOps Manifest Synchronization (Kustomize)...
-  -> Target overlay verified at: infrastructure/kubernetes/overlays/dev
-  -> Simulating tag update to: ghcr.io/sebian-lab/alphatracer-financial-api:61aea48
-  [OK] Manifest reflects immutable tag: 61aea48 [skip ci]
-
-[STAGE 4/4] Simulating K3s Cluster Auto-Pull and Rollout...
-  -> Target Namespace  : alphatracer-dev
-  -> Sync Mechanism     : ArgoCD automated selfHeal and prune
-  -> Container Runtime  : containerd (K3s Node: k3smaster)
-
-Rollout Simulation Status for Deployment 'alphatracer' in 'alphatracer-dev':
-  [1/3] Fetching new image ghcr.io/sebian-lab/alphatracer-financial-api:61aea48 from registry cache... Done.
-  [2/3] Spawning new pod with NonRoot UID 1000 securityContext... Done.
-  [3/3] Readiness and Liveness probes passed: GET /health -> 200 OK. Done.
-  [OK] Deployment updated smoothly to tag 61aea48 with zero downtime!
-
-=================================================================
-MOCKUP TEST PASSED: DevSecOps pipeline and K3s rollout validated!
-```
-
 ---
 
-## 🧪 Local K3s Auto-Pull Mockup (Live Recruiter Demo)
+## 🐳 Dual Docker Architecture: Development vs. Production
 
-Want to inspect and run the pipeline verification locally? Run:
-
-```powershell
-# In PowerShell (Windows):
-.\scripts\mock-k3s-autopull.ps1 -TargetBranch dev
-```
-```bash
-# In Bash (Linux / macOS):
-bash ./scripts/mock-k3s-autopull.sh dev
-```
-
-
----
-
-## 🖥️ Zero Cloud Cost: Homelab 3-Node K3s Cluster
-
-Rather than burning expensive cloud credits (AWS EKS or Azure AKS), this platform runs on a **self-hosted 3-node K3s cluster** built on local virtualization:
-
-### Live Cluster Topology (`kubectl get nodes -o wide`)
-```
-NAME        STATUS   ROLES           VERSION        INTERNAL-IP      OS-IMAGE           CONTAINER-RUNTIME
-k3smaster   Ready    control-plane   v1.36.2+k3s1   192.168.56.109   Ubuntu 26.04 LTS   containerd://2.3.2-k3s2
-k3sslave1   Ready    <none>          v1.36.2+k3s1   10.0.2.15        Ubuntu 26.04 LTS   containerd://2.3.2-k3s2
-k3sslave2   Ready    <none>          v1.36.2+k3s1   10.0.2.15        Ubuntu 26.04 LTS   containerd://2.3.2-k3s2
-```
-
-### Cluster Architecture & Namespaces (System Schematic)
+To bridge the gap between rapid developer velocity and hardened cloud security, AlphaTracer maintains two distinct, purpose-built Docker Compose architectures:
 
 ```mermaid
 flowchart TB
-    subgraph Clients["Clients & Ingress Layer"]
-        User["Client / Frontend / Test Runners"]
-        Ingress["Ingress Controller / Reverse Proxy (:80 / :8080)"]
+    subgraph DEV_ENV["🧪 Development Stack (docker-compose.yml)"]
+        direction TB
+        HostCode["💻 Host Filesystem (./app)"]
+        DevAPI["alphatracer-api (:8011)<br/>• Local Build: Dockerfile<br/>• Live Bind-Mount: ./app:/app/app<br/>• Uvicorn --reload (Sub-Second Hot Reload)"]
+        DevDB[("PostgreSQL 15<br/>Volume: postgres_data")]
+        DevTools["Local DevSecOps & Security Tools<br/>• HashiCorp Vault (:8200)<br/>• Trivy Scanner Server (:4954)<br/>• Local Docker OCI Registry (:5000)"]
+        
+        HostCode ==>|Live Bind-Mount| DevAPI
+        DevAPI -->|SQL Queries| DevDB
+        DevAPI -.->|Dynamic Secrets| DevTools
     end
 
-    subgraph Cluster["K3s Cluster Runtime (Control Plane :6443)"]
-        subgraph NS_App["Workload Namespaces: alphatracer / alphatracer-dev"]
-            API["AlphaTracer API (FastAPI :8011)<br/>Non-Root appuser (UID 1000)"]
-            DB[("PostgreSQL 15 DB<br/>Port :5432")]
-            SecInj["Kubernetes Secrets (alphatracer-secrets)<br/>Zero Cleartext .env on Disk"]
-        end
-
-        subgraph NS_Security["Policy-as-Code & GitOps Engine"]
-            Kyverno{"Kyverno Admission Webhook<br/>• Cosign Keyless Signature Verification<br/>• Disallow Root Execution (UID 0)<br/>• Enforce CPU/Memory Limits"}
-            Argo["ArgoCD GitOps Controller<br/>Auto-Sync Kustomize Overlays (dev/prod)"]
-        end
-
-        subgraph NS_Monitoring["Observability & Telemetry Stack"]
-            Prom["Prometheus (:9090)<br/>Scrapes :8011/metrics every 15s"]
-            Alert["Alertmanager (:9093)<br/>Notification Routing & Silences"]
-            Grafana["Grafana Dashboards (:3000)<br/>Unified Golden Signals UI"]
-            Loki["Loki Engine (:3100)<br/>Container Log Aggregator"]
-            Jaeger["Jaeger Tracing (:16686)<br/>OTLP Tracing (:4317/:4318)"]
-        end
+    subgraph PROD_ENV["🛡️ Production Stack (docker-compose.prod.yml)"]
+        direction TB
+        GHCR["📦 GitHub Container Registry (GHCR)<br/>ghcr.io/sebian-lab/alphatracer-financial-api:sha"]
+        CosignVerify["🔐 Sigstore / Cosign Verification<br/>Keyless OIDC Signed Image"]
+        ProdAPI["alphatracer-api-prod (:8011)<br/>• Pulls Verified Signed Image from GHCR<br/>• Zero Host Bind-Mounts (Code Sealed Inside)<br/>• Non-Root appuser (UID 1000)"]
+        ProdDB[("PostgreSQL 15<br/>Volume: postgres_prod_data")]
+        
+        GHCR --> CosignVerify -->|Pull Signed Artifact| ProdAPI
+        ProdAPI -->|Production DB Transactions| ProdDB
     end
 
-    subgraph Platform["Supporting Platform & External Services"]
-        Vault["HashiCorp Vault (:8200)<br/>Dynamic Secret Leasing"]
-        Registry["Local Docker Registry (:5000)<br/>Local OCI Container Cache"]
-        Trivy["Trivy Server (:4954)<br/>Vulnerability Scanner Server"]
-        YahooFinance["Yahoo Finance (yfinance)<br/>Live Quotes & Financial Metrics"]
+    subgraph TELEMETRY["📊 Shared Enterprise Observability & Monitoring Engine"]
+        Prom["Prometheus (:9090)<br/>Scrapes :8011/metrics every 15s"]
+        Alert["Alertmanager (:9093)<br/>Notification Routing & Grouping"]
+        Jaeger["Jaeger OTLP (:16686)<br/>Distributed Request Spans (:4318)"]
+        Loki["Loki Engine (:3100)<br/>High-Throughput Log Aggregator"]
+        Grafana["Grafana Dashboards (:3000)<br/>Unified Golden Signals Visualizer"]
+        
+        Prom -->|Fire Threshold Alerts| Alert
+        Grafana -->|PromQL| Prom
+        Grafana -->|LogQL| Loki
     end
 
-    %% Network & Request flows
-    User -->|HTTP / REST| Ingress
-    Ingress -->|Route /api/v1| API
-    API -->|Read / Write SQL| DB
-    SecInj -.->|In-Memory Secret KeyRef| API
-    API -->|Cached Market Queries| YahooFinance
-
-    %% GitOps & Admission Control
-    Argo -->|Declarative Sync| NS_App
-    Kyverno -->|Validate Pod Admission| API
-
-    %% Observability Scrapes & Traces
-    Prom -->|Scrape Metrics| API
-    Prom -->|Fire Alerts| Alert
-    Grafana -->|PromQL| Prom
-    Grafana -->|LogQL| Loki
-    API -->|Send Spans| Jaeger
-    API -->|Ship Logs| Loki
+    %% Observability Connections
+    DevAPI -->|Metrics / Traces / Logs| TELEMETRY
+    ProdAPI -->|Metrics / Traces / Logs| TELEMETRY
 ```
+
+### Architectural Comparison: Dev vs. Production
+
+| Dimension | Development (`docker-compose.yml`) | Production (`docker-compose.prod.yml`) |
+| :--- | :--- | :--- |
+| **Primary Goal** | Sub-second developer iteration & debugging | Immutability, zero configuration drift, high security |
+| **Image Artifact** | Built locally on-the-fly (`build: .`) | Pulled from GHCR with immutable Git commit SHA tag |
+| **Code Mounting** | **Host bind mount** (`./app:/app/app`) for hot-reload | **Zero host mounts** (Code is immutably sealed in image) |
+| **Container User** | `appuser` (UID 1000) | `appuser` (UID 1000, non-root enforced) |
+| **Supply Chain Security**| Local unverified builds | Cryptographically signed via **Sigstore / Cosign** |
+| **Database Isolation** | Volume: `postgres_data` | Isolated Volume: `postgres_prod_data` |
+| **Supporting Services** | Includes Vault, Trivy scanner, Local Registry | Streamlined to API, DB, and Observability stack |
+| **Startup Command** | `docker compose -f docker-compose.yml up --build -d` | `docker compose -f docker-compose.prod.yml up -d` |
+
 
 ---
 
-## 🖥️ Option 1: The Essential Observability & Platform Stack (Recommended)
+## 🖥️ Complete DevSecOps & Observability Platform Stack
 
-Official, lightweight, high-value DevSecOps & Observability tools running smoothly locally on your laptop:
+All 10 services are pre-wired and running locally via Docker Compose (`docker compose up -d`):
 
 | Platform Component | Local Endpoint URL | Role / Why It Matters | Status |
 | :--- | :--- | :--- | :--- |
+| **AlphaTracer API (FastAPI)** | [`http://localhost:8011/docs`](http://localhost:8011/docs) | Financial market data backend (Swagger UI & `/health`) | 🟢 Active |
+| **Prometheus Metrics** | [`http://localhost:9090`](http://localhost:9090) | Time-Series Metrics Scraper & PromQL Target Status | 🟢 Active |
 | **Grafana UI** | [`http://localhost:3000`](http://localhost:3000) (admin / admin) | Unified Golden Signals, Dashboards, and Visualizations | 🟢 Active |
 | **Alertmanager** | [`http://localhost:9093`](http://localhost:9093) | Prometheus Alert Routing, Silences & Webhooks | 🟢 Active |
-| **Jaeger Tracing** | [`http://localhost:16686`](http://localhost:16686) | Distributed Tracing & Waterfall Latency Analysis | 🟢 Active |
-| **Loki Log Aggregator** | [`http://localhost:3100`](http://localhost:3100) | Centralized Container Log Aggregation Engine | 🟢 Active |
-| **Local Docker Registry**| [`http://localhost:5000`](http://localhost:5000) | Local Container Image Push/Pull Registry Cache | 🟢 Active |
-| **HashiCorp Vault** | [`http://localhost:8200`](http://localhost:8200) | Automated secret storage, leasing & dynamic rotation | 🟢 Active |
-| **Prometheus Metrics** | [`http://localhost:9090`](http://localhost:9090) | Time-Series Metrics Scraper & PromQL Target Status | 🟢 Active |
-| **Trivy Vulnerability Server** | [`http://localhost:4954`](http://localhost:4954) | Container & Dependency Security CVE Scanner | 🟢 Active |
-| **K3s Kubernetes Cluster** | [`https://localhost:6443`](https://localhost:6443) | Lightweight On-Premise Kubernetes Control Plane | 🟢 Active |
-| **AlphaTracer API (FastAPI)** | [`http://localhost:8011/docs`](http://localhost:8011/docs) | Financial market data backend (Swagger UI & `/health`) | 🟢 Active |
+| **Jaeger Tracing** | [`http://localhost:16686`](http://localhost:16686) | OTLP Distributed Tracing & Request Latency Spans | 🟢 Active |
+| **Loki Log Engine** | [`http://localhost:3100`](http://localhost:3100) | Centralized JSON Container Log Stream Collector | 🟢 Active |
+| **HashiCorp Vault** | [`http://localhost:8200`](http://localhost:8200) | Centralized KV v2 Secret Management & Dynamic Retrieval | 🟢 Active |
+| **Local Docker Registry**| [`http://localhost:5000`](http://localhost:5000) | Local Container Push/Pull Distribution Cache | 🟢 Active |
+| **K3s Kubernetes Cluster** | [`https://localhost:6443`](https://localhost:6443) | Lightweight Kubernetes Control Plane for Testing Manifests | 🟢 Active |
+| **Trivy Vulnerability Server** | [`http://localhost:4954`](http://localhost:4954) | Container & Dependency Security CVE Scanner Daemon | 🟢 Active |
 
-### 📋 Live Platform Execution Log (Demonstration for Technical Interviews)
+### 📋 Live Platform Execution Log
 Run the automated live probe script anytime to verify all 10 services and K3s cluster health:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\probe-observability.ps1
@@ -379,23 +313,22 @@ docker compose ps
 ## 🛠️ Complete DevSecOps Toolchain Summary
 
 
-| Category | Tool / Component | Student Implementation & Value | Local Sandbox Endpoint | Direct Repository & Verification Links |
+| Category | Tool / Component | Implementation & Value | Local Sandbox Endpoint | Verification |
 | :--- | :--- | :--- | :--- | :--- |
-| **API Application (Local)** | [FastAPI](https://fastapi.tiangolo.com/) + PostgreSQL | Financial market data & portfolio tracking backend | [`http://localhost:8011/docs`](http://localhost:8011/docs) • [`/health`](http://localhost:8011/health) | [app/main.py](app/main.py) • [Usage&examples.md](Usage&examples.md) |
-| **Observability (Metrics)**| [Prometheus](https://prometheus.io/) | Scraping application metrics (`/metrics`) and cluster node states | [`http://localhost:8011/metrics`](http://localhost:8011/metrics) • `http://localhost:9090` | [Prometheus Setup](infrastructure/kubernetes/base/deployment.yaml) |
-| **Observability (Dashboards)**| [Grafana](https://grafana.com/) | Real-time dashboards visualizing cluster health & latency | [`http://localhost:3000`](http://localhost:3000) (admin / admin) | Running in local Docker compose |
-| **GitOps Engine (ArgoCD)**| [ArgoCD Controller](https://argo-cd.readthedocs.io/) | Continuous delivery and auto-sync on K3s cluster | [`https://localhost:8080`](https://localhost:8080) (or NodePort `30080`) | [argo-app.yaml](infrastructure/kubernetes/argo-app.yaml) • [argo-app-prod.yaml](infrastructure/kubernetes/argo-app-prod.yaml) |
-| **Policy Engine** | [Kyverno Admission Controller](https://kyverno.io/) | Admission control policy blocking root and privileged pods | Cluster Webhook (`validate.kyverno.svc`) | [policies/kyverno/disallow-root.yaml](policies/kyverno/disallow-root.yaml) |
-| **Kubernetes Cluster** | [K3s Cluster (3-Node)](https://k3s.io/) | Zero-cloud-cost on-premise Kubernetes control plane | [`https://192.168.56.109:6443`](https://192.168.56.109:6443) (`k3smaster`) | [Node Topology & Architecture](#-zero-cloud-cost--live-3-node-k3s-cluster-architecture) |
-| **Production Overlay** | [Kustomize Production](https://kustomize.io/) | Production overlay with immutable GitOps tag pinning | Cluster Namespace: `alphatracer` | [infrastructure/kubernetes/overlays/prod/](infrastructure/kubernetes/overlays/prod/) |
-| **Development Overlay** | [Kustomize Development](https://kustomize.io/) | Rapid iteration dev overlay with auto-sync | Cluster Namespace: `alphatracer-dev` | [infrastructure/kubernetes/overlays/dev/](infrastructure/kubernetes/overlays/dev/) |
-| **Container CVE Scan** | [Aqua Security Trivy](https://trivy.dev/) | Vulnerability scanning of built Docker images; outputs SARIF reports | Exported to GitHub Security Dashboard | [GitHub Security Code Scanning Alerts](https://github.com/sebian-lab/alphatracer-financial-api/security/code-scanning) |
-| **Infrastructure as Code**| [HashiCorp Terraform](https://www.terraform.io/) | Modular AWS EKS & VPC IaC HCL definitions (`main.tf`, `variables.tf`) | Dry-Run `terraform plan` in CI | [infrastructure/terraform/main.tf](infrastructure/terraform/main.tf) • [backend.tf](infrastructure/terraform/backend.tf) |
-| **Cryptographic Provenance**| [Sigstore Cosign](https://docs.sigstore.dev/cosign/overview/) | Keyless image signing using GitHub OIDC tokens on `prod` releases | [Rekor Transparency Log Search](https://search.sigstore.dev/) | [GitHub Container Registry (GHCR)](https://github.com/sebian-lab?tab=packages) |
-| **Software Supply Chain**| [Anchore Syft (SBOM)](https://github.com/anchore/syft) | Generates SPDX Software Bill of Materials (**SBOM**) | Downloadable JSON in CI Artifacts | [GitHub Actions Artifacts](https://github.com/sebian-lab/alphatracer-financial-api/actions) |
-| **Secret Scanning** | [Gitleaks](https://github.com/gitleaks/gitleaks) | Full git history scanning blocking credential leaks | Instant 2s hook & CI scanner | [.gitleaks.toml](.gitleaks.toml) • [pre-commit-config.yaml](.pre-commit-config.yaml) |
-| **SAST Code Scanner** | [PyCQA Bandit](https://bandit.readthedocs.io/) | Static analysis of Python code for security flaws | Local CLI: `bandit -r app/ -ll -ii` | [dev-check.ps1](dev-check.ps1) • [main-ci.yml](.github/workflows/main-ci.yml) |
-| **CI/CD Orchestration** | [GitHub Actions](https://github.com/sebian-lab/alphatracer-financial-api/actions) | 3-Branch automated testing, security scanning, IaC plan, and GitOps image update | Cloud Runner Matrix | [All Workflow Runs](https://github.com/sebian-lab/alphatracer-financial-api/actions/workflows/main-ci.yml) |
+| **API Application** | [FastAPI](https://fastapi.tiangolo.com/) + PostgreSQL 15 | Financial market data & portfolio tracking backend | [`http://localhost:8011/docs`](http://localhost:8011/docs) • [`/health`](http://localhost:8011/health) | [app/main.py](app/main.py) |
+| **Observability (Metrics)**| [Prometheus](https://prometheus.io/) | Time-series scraper collecting `/metrics` counters, histograms, and uptime | [`http://localhost:9090`](http://localhost:9090) | [prometheus.yml](infrastructure/prometheus/prometheus.yml) |
+| **Observability (Dashboards)**| [Grafana](https://grafana.com/) | Unified Golden Signals visualizer with PromQL & LogQL streams | [`http://localhost:3000`](http://localhost:3000) (admin / admin) | Pre-configured in Docker Compose |
+| **Distributed Tracing** | [Jaeger OTLP](https://www.jaegertracing.io/) | OpenTelemetry request span waterfalls and latency profiling | [`http://localhost:16686`](http://localhost:16686) (OTLP :4318) | Live OpenTelemetry instrumentation |
+| **Log Aggregation** | [Grafana Loki](https://grafana.com/oss/loki/) | High-efficiency container log aggregation | [`http://localhost:3100/ready`](http://localhost:3100/ready) | Direct HTTP push endpoint |
+| **Alert Routing** | [Alertmanager](https://prometheus.io/docs/alerting/latest/alertmanager/) | Prometheus alert grouping, silence windows, and webhook routing | [`http://localhost:9093`](http://localhost:9093) | Clustered on port 9094 |
+| **Secret Management** | [HashiCorp Vault](https://www.vaultproject.io/) | Centralized KV v2 dynamic secret leasing (JWT keys & DB credentials) | [`http://localhost:8200`](http://localhost:8200) | [scripts/seed-vault.ps1](scripts/seed-vault.ps1) |
+| **Container CVE Scan** | [Aqua Security Trivy](https://trivy.dev/) | Image and filesystem CVE vulnerability scanner daemon | [`http://localhost:4954/healthz`](http://localhost:4954/healthz) | Live daemon + CI action |
+| **Local OCI Registry** | [Docker Registry v2](https://distribution.github.io/distribution/) | Private container distribution cache | [`http://localhost:5000/v2/`](http://localhost:5000/v2/) | Local container push/pull |
+| **Cryptographic Provenance**| [Sigstore Cosign](https://docs.sigstore.dev/cosign/overview/) | Keyless container image signing using GitHub OIDC on `prod` branch | [GitHub Container Registry (GHCR)](https://github.com/sebian-lab?tab=packages) | Verified by Sigstore |
+| **Software Supply Chain**| [Anchore Syft (SBOM)](https://github.com/anchore/syft) | Automated SPDX Software Bill of Materials generation | Downloadable in CI Artifacts | [.github/workflows/main-ci.yml](.github/workflows/main-ci.yml) |
+| **Secret Scanning** | [Gitleaks](https://github.com/gitleaks/gitleaks) | Full git history scanning blocking credential leaks before commit | Instant pre-PR & pre-commit hook | [.gitleaks.toml](.gitleaks.toml) |
+| **SAST Code Scanner** | [PyCQA Bandit](https://bandit.readthedocs.io/) | Python AST static security vulnerability analysis | CLI: `bandit -r app/ -ll -ii` | [dev-check.ps1](dev-check.ps1) |
+| **CI/CD Orchestration** | [GitHub Actions](https://github.com/sebian-lab/alphatracer-financial-api/actions) | 3-Branch automated pipeline: tests, SAST, Trivy, SBOM, signing, and tag update | Cloud Runner Matrix | [.github/workflows/main-ci.yml](.github/workflows/main-ci.yml) |
 
 
 

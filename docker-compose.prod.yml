@@ -1,7 +1,16 @@
+# ==============================================================================
+# 🚀 AlphaTracer Production Docker Compose Stack (docker-compose.prod.yml)
+# Pulls and runs the exact, signed, immutable production image from GHCR
+# (matching infrastructure/kubernetes/overlays/prod/kustomization.yaml)
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml up -d
+# ==============================================================================
+
 services:
   db:
     image: postgres:15-alpine
-    container_name: alphatracer-db
+    container_name: alphatracer-db-prod
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -10,7 +19,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_prod_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d trading_db"]
       interval: 5s
@@ -18,16 +27,16 @@ services:
       retries: 5
 
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: alphatracer-api
+    # Pulls the verified, signed production image produced by GitHub Actions CI
+    # Tag matches infrastructure/kubernetes/overlays/prod/kustomization.yaml
+    image: ghcr.io/sebian-lab/alphatracer-financial-api:${IMAGE_TAG:-d83d9d9dd4485358e07c67d934103bf129697cea}
+    container_name: alphatracer-api-prod
     restart: always
     ports:
       - "8011:8011"
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres_secure_pass@db:5432/trading_db}
-      SECRET_KEY: ${SECRET_KEY:-test-secret-key-1234}
+      SECRET_KEY: ${SECRET_KEY:-prod-high-entropy-jwt-key-32bytes}
       ALGORITHM: ${ALGORITHM:-HS256}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
       REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
@@ -36,53 +45,28 @@ services:
       TICKER_UPDATE_INTERVAL_HOURS: 12
       PRICE_API_PROVIDER: yfinance
       ALLOWED_ORIGINS: "*"
-      # Industrial Integrations
-      VAULT_ADDR: ${VAULT_ADDR:-http://vault:8200}
-      VAULT_TOKEN: ${VAULT_TOKEN:-root}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
-      LOKI_URL: ${LOKI_URL:-http://loki:3100/loki/api/v1/push}
+      # Observability Integrations
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      LOKI_URL: http://loki:3100/loki/api/v1/push
       ENABLE_TRACING: "true"
       ENABLE_LOKI: "true"
     depends_on:
       db:
         condition: service_healthy
-    volumes:
-      - ./app:/app/app
+    # Production Notice: No local host volume mounting (code is immutably baked into container image)
 
-  # ── Dynamic Secret Management (HashiCorp Vault) ──
-  vault:
-    image: hashicorp/vault:latest
-    container_name: alphatracer-vault
-    environment:
-      VAULT_DEV_ROOT_TOKEN_ID: "root"
-      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
-    ports:
-      - "8200:8200"
-    restart: unless-stopped
-
-  # ── Container Vulnerability Security (Trivy Server) ──
-  trivy:
-    image: aquasec/trivy:latest
-    container_name: alphatracer-trivy
-    command: server --listen 0.0.0.0:4954
-    ports:
-      - "4954:4954"
-    restart: unless-stopped
-
-  # ── Metrics Telemetry Engine (Prometheus) ──
   prom:
     image: prom/prometheus:latest
-    container_name: alphatracer-prom
+    container_name: alphatracer-prom-prod
     volumes:
       - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports:
       - "9090:9090"
     restart: unless-stopped
 
-  # ── Unified Dashboards & Observability (Grafana) ──
   grafana:
     image: grafana/grafana:latest
-    container_name: alphatracer-grafana
+    container_name: alphatracer-grafana-prod
     ports:
       - "3000:3000"
     environment:
@@ -93,18 +77,16 @@ services:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
     restart: unless-stopped
 
-  # ── Alert Routing & Notification Engine (Alertmanager) ──
   alertmanager:
     image: prom/alertmanager:latest
-    container_name: alphatracer-alertmanager
+    container_name: alphatracer-alertmanager-prod
     ports:
       - "9093:9093"
     restart: unless-stopped
 
-  # ── Distributed Tracing Backend (Jaeger OTLP) ──
   jaeger:
     image: jaegertracing/all-in-one:latest
-    container_name: alphatracer-jaeger
+    container_name: alphatracer-jaeger-prod
     ports:
       - "16686:16686"
       - "4317:4317"
@@ -113,25 +95,13 @@ services:
       - COLLECTOR_OTLP_ENABLED=true
     restart: unless-stopped
 
-  # ── Centralized Log Aggregation (Grafana Loki) ──
   loki:
     image: grafana/loki:latest
-    container_name: alphatracer-loki
+    container_name: alphatracer-loki-prod
     ports:
       - "3100:3100"
     command: -config.file=/etc/loki/local-config.yaml
     restart: unless-stopped
 
-  # ── Local OCI Container Image Registry Cache ──
-  registry:
-    image: registry:2
-    container_name: alphatracer-registry
-    ports:
-      - "5000:5000"
-    environment:
-      - REGISTRY_STORAGE_DELETE_ENABLED=true
-    restart: unless-stopped
-
 volumes:
-  postgres_data:
-
+  postgres_prod_data:
