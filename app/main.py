@@ -53,6 +53,16 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Industrial Observability: Jaeger Tracing & Loki Log Forwarding
+    try:
+        from app.core.telemetry import setup_telemetry
+        from app.core.logging_loki import setup_loki_logging
+
+        setup_telemetry(app)
+        setup_loki_logging()
+    except Exception as exc:
+        print(f"[observability] Setup warning (non-fatal): {exc}")
+
     import time
     from collections import defaultdict
     from threading import Lock
