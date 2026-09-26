@@ -79,22 +79,6 @@ services:
       - "9090:9090"
     restart: unless-stopped
 
-  # ── Kubernetes Control Plane (K3s Engine) ──
-  k3s:
-    image: rancher/k3s:v1.31.0-k3s1
-    container_name: alphatracer-k3s
-    privileged: true
-    command: server --disable traefik
-    environment:
-      - K3S_KUBECONFIG_OUTPUT=/output/kubeconfig.yaml
-      - K3S_KUBECONFIG_MODE=666
-    ports:
-      - "6443:6443"
-    volumes:
-      - k3s_data:/var/lib/rancher/k3s
-      - ./infrastructure/kubernetes:/output
-    restart: unless-stopped
-
   # ── Unified Dashboards & Observability (Grafana) ──
   grafana:
     image: grafana/grafana:latest
@@ -150,5 +134,4 @@ services:
 
 volumes:
   postgres_data:
-  k3s_data:
 

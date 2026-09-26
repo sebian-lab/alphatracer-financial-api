@@ -1,5 +1,5 @@
 # ==============================================================================
-# 🔑 Initialize and Seed HashiCorp Vault with AlphaTracer Secrets
+# Initialize and Seed HashiCorp Vault with AlphaTracer Secrets
 # Usage: .\scripts\seed-vault.ps1
 # ==============================================================================
 
@@ -10,7 +10,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "🔑 Initializing HashiCorp Vault Secrets for AlphaTracer..." -ForegroundColor Cyan
+Write-Host "Initializing HashiCorp Vault Secrets for AlphaTracer..." -ForegroundColor Cyan
 
 $headers = @{
     "X-Vault-Token" = $VaultToken
@@ -20,9 +20,9 @@ $headers = @{
 # 1. Verify Vault is responsive
 try {
     $health = Invoke-RestMethod -Uri "$VaultUrl/v1/sys/health" -Method Get -TimeoutSec 3
-    Write-Host "   ✅ Vault is online and healthy." -ForegroundColor Green
+    Write-Host "   [OK] Vault is online and healthy." -ForegroundColor Green
 } catch {
-    Write-Host "   ⚠️ Could not reach Vault at $VaultUrl. Is 'docker compose up -d' running?" -ForegroundColor Yellow
+    Write-Host "   [WARN] Could not reach Vault at $VaultUrl. Is docker compose up running?" -ForegroundColor Yellow
     exit 1
 }
 
@@ -37,11 +37,11 @@ $secretPayload = @{
 
 try {
     Invoke-RestMethod -Uri "$VaultUrl/v1/secret/data/alphatracer" -Method Post -Headers $headers -Body $secretPayload | Out-Null
-    Write-Host "   ✅ Successfully stored 'alphatracer' secrets in Vault KV engine." -ForegroundColor Green
-    Write-Host "      - secret/data/alphatracer -> database_url, secret_key" -ForegroundColor Gray
+    Write-Host "   [OK] Successfully stored alphatracer secrets in Vault KV engine." -ForegroundColor Green
+    Write-Host "        Path: secret/data/alphatracer (database_url, secret_key, algorithm)" -ForegroundColor Gray
 } catch {
-    Write-Host "   ❌ Failed to store secret in Vault: $_" -ForegroundColor Red
+    Write-Host "   [FAIL] Failed to store secret in Vault: $_" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "`n🎉 Vault seeding complete! AlphaTracer API will automatically load these secrets." -ForegroundColor Green
+Write-Host "`nVault seeding complete! AlphaTracer API will automatically load these secrets." -ForegroundColor Green
