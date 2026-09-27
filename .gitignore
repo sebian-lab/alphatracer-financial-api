@@ -47,6 +47,8 @@ server.log
 # Personal Interview Prep & Notes
 INTERVIEW_PREP_DRILLDOWN.md
 *interview*.md
+*study*.md
+CEGEKA_*.md
 .curlrc
 
 # OS generated files
